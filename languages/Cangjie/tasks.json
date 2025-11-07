@@ -1,30 +1,49 @@
 [
   {
-    "label": "cangjie build",
+    "label": "zed: cangjie build",
     "command": "cjpm",
     "args": ["build"],
-    "tags": ["cangjie-build"]
+    "tags": ["zed", "cangjie-build"],
+    "description": "使用cjpm构建仓颉项目"
   },
   {
-    "label": "cangjie build run",
+    "label": "zed: cangjie build run",
     "command": "cjpm",
     "args": ["build", "run"],
-    "tags": ["cangjie-build-run"]
+    "tags": ["zed", "cangjie-build-run"],
+    "description": "构建并运行仓颉项目"
   },
   {
-    "label": "cangjie build test",
+    "label": "zed: cangjie build test",
     "command": "cjpm",
-    "args": ["build", "test"]
+    "args": ["build", "test"],
+    "tags": ["zed", "cangjie-build-test"],
+    "description": "构建并测试仓颉项目"
   },
   {
-    "label": "cangjie test",
+    "label": "zed: cangjie test current file",
     "command": "cjpm",
     "args": [
       "test",
-      "$CANGJIE_FILE",
+      "${file}",
       "--test-filter",
-      "\"$ZED_CUSTOM_CANGJIE_TEST_NAME\""
+      "\"${zed:custom.cangjie.test.name}\""
     ],
-    "tags": ["cangjie-test"]
+    "tags": ["zed", "cangjie-test"],
+    "description": "测试当前文件中指定名称的测试用例"
+  },
+  {
+    "label": "zed: cangjie clean",
+    "command": "cjpm",
+    "args": ["clean"],
+    "tags": ["zed", "cangjie-clean"],
+    "description": "清理构建产物"
+  },
+  {
+    "label": "zed: cangjie build (release)",
+    "command": "cjpm",
+    "args": ["build", "--release"],
+    "tags": ["zed", "cangjie-build", "release"],
+    "description": "以release模式构建仓颉项目"
   }
 ]

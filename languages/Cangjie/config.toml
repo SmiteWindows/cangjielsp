@@ -9,4 +9,4 @@ hard_tabs = false
 # first_line_pattern = "^#!.*\\bcangjie\\b"
 
 # 支持的调试器
-debuggers = ["Cangjie"]
+# debuggers = ["Cangjie"]

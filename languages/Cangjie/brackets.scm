@@ -1,9 +1,13 @@
-; 基础括号对（带上下文约束，避免误匹配）
+; 基础括号对（仓颉语法适配版）
 (
   (:or
-    (parenthesizedExpression) ; 表达式括号 (a + b)
-    (callExpression)          ; 函数调用括号 f(...)
-    (parameterList)           ; 参数列表括号 (x: int, y: bool)
+    (ParenExpr)              ; 括号表达式 (a + b)
+    (call_expression)        ; 函数调用 f(...)
+    (parameter_list)         ; 参数列表 (x: Int, y: Bool)
+    (TupleLiteral)           ; 元组字面量 (1, "a")
+    (MatchExpr lParen: _)    ; 模式匹配 match(...) 中的括号
+    (QuoteExpr lParen: _)    ; quote表达式 quote(...) 中的括号
+    (VArrayExpr lParen: _)   ; 变长数组表达式 (...) 中的括号
   )
   "(" @open
   ")" @close
@@ -11,8 +15,7 @@
 
 (
   (:or
-    (arrayLiteral)            ; 数组 [1,2,3]
-    (sliceType)               ; 索引 [i]
+    (ArrayLiteral)           ; 数组字面量 [1, 2, 3]
   )
   "[" @open
   "]" @close
@@ -20,99 +23,82 @@
 
 (
   (:or
-    (block)                   ; 代码块 { ... }
-    (objectLiteral)           ; 对象字面量 { key: val }
-    (structLiteral)           ; 结构体字面量 { x: 1 }
+    (Block)                  ; 代码块 { ... }
+    (MatchExpr lBrace: _)    ; 模式匹配 match { ... } 中的大括号
   )
   "{" @open
   "}" @close
 )
 
 ; 字符串/字符引号对（排除转义符号）
-(stringLiteral
-  (stringContent
-    "\"" @open
-    (#not-preceded-by? "\\")
+(LitConstExpr
+  (literal
+    kind: STRING_LITERAL
+    value: (string_content) @content
+    (#match? @content "^[^\\\\]\"") ; 非转义起始引号
+    (#set! @open (get-char @content -1))
   )
-  (stringContent
-    "\"" @close
-    (#not-preceded-by? "\\")
-  )
-)
-; 字符类型字面量
-(:or (charLiteral) (stringLiteral))
-  (charContent
-    "r'" @open
-    (#not-preceded-by? "\\")
-  )
-  (charContent
-    "'" @close
-    (#not-preceded-by? "\\")
-  )
-)
-; RUNE_BYTE_LITERAL
-(:or (charLiteral) (stringLiteral))
-  (charContent
-    "b'" @open
-    (#not-preceded-by? "\\")
-  )
-  (charContent
-    "'" @close
-    (#not-preceded-by? "\\")
+  (literal
+    kind: STRING_LITERAL
+    value: (string_content) @content
+    (#match? @content "\"[^\\\\]$") ; 非转义结束引号
+    (#set! @close (get-char @content 0))
   )
 )
 
-; JSTRING_LITERAL
-(:or (charLiteral) (stringLiteral))
-  (charContent
-    "J\"" @open
-    (#not-preceded-by? "\\")
-  )
-  (charContent
-    "'" @close
-    (#not-preceded-by? "\\")
-  )
-)
 ; 多行字符串
-(multilineString
-  "\"\"\"" @open
-  "\"\"\"" @close)
-
-(multilineString
-  "```" @open
-  "```" @close)
-; MULTILINE_RAW_STRING
-; 插值字符串
-(templateString
-  "${" @open
-  "}" @close)
-
-; 泛型参数：左 < 在 genericType 下，右 > 也在同一节点下
-(genericType
-  "<" @open
-  (typeArguments) ; 中间的参数节点
-  ">" @close)
-
-; 块注释：左 /* 和右 */ 都属于 blockComment 节点
-(blockComment
-  "/*" @open
-  (commentContent) ; 注释内容节点
-  "*/" @close)
-
-; Payload 自定义分隔符
-(payload
-  "|" @open
-  (#not-following-sibling? "|")
+(LitConstExpr
+  (literal
+    kind: MULTILINE_STRING
+    value: "\"\"\"" @open
+  )
+  (literal
+    kind: MULTILINE_STRING
+    value: "\"\"\"" @close
+  )
 )
-(payload
-  "|" @close
-  (#not-preceding-sibling? "|")
+
+; 多行原始字符串
+(LitConstExpr
+  (literal
+    kind: MULTILINE_RAW_STRING
+    value: (string_content) @content
+    (#match? @content "^#+\".*") ; 起始分隔符 e.g. "#\""
+    @content @open
+  )
+  (literal
+    kind: MULTILINE_RAW_STRING
+    value: (string_content) @content
+    (#match? @content ".*\"#+$") ; 结束分隔符 e.g. "\"#"
+    @content @close
+  )
+)
+
+; 泛型参数
+(generic_type
+  "<" @open
+  (type_arguments)
+  ">" @close
+)
+
+; 块注释
+(block_comment
+  "/*" @open
+  (comment_content)
+  "*/" @close
 )
 
 ; 区间分隔符
-(rangeExpression
-  ".." @separator)
+(range_expression
+  ".." @separator
+)
 
-(rangeExpression
-  "..=" @separator)
-; DOLLAR_IDENTIFIER|        /*  e.g. "$x"          */
+(range_expression
+  "..=" @separator
+)
+
+; 美元标识符（特殊标记）
+(identifier
+  value: "$" @dollar
+  (#has-parent? (DOLLAR_IDENTIFIER))
+)

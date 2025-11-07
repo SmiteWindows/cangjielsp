@@ -1,33 +1,45 @@
-; Classes and similar constructs
+; 仓颉语言文本对象规则（基于AST节点）
+
+; 类与类似结构
 [
-  (classDefinition (classBody) @class.inside)
-  (structDefinition (structBody) @class.inside)
-  (interfaceDefinition (interfaceBody) @class.inside)
-  (enumDefinition (enumBody) @class.inside)
-  (extendDefinition (extendBody) @class.inside)
+  (ClassDecl (body) @class.inside)
+  (StructDecl (body) @class.inside)
+  (InterfaceDecl (body) @class.inside)
+  (EnumDecl (body) @class.inside)
+  (ExtendDecl (body) @class.inside)
 ] @class.around
 
-; Functions & Methods
+; 函数与方法
 [
-  (functionDefinition (block) @function.inside)
-  (operatorFunctionDefinition (block) @function.inside)
-  (mainDefinition (block) @function.inside)
-  (macroDefinition (block) @function.inside)
-  (propertyDefinition) @function.inside ; 单行属性，inside = around
+  (FuncDecl (block) @function.inside)
+  (OperatorDecl (block) @function.inside)
+  (MainDecl (block) @function.inside)
+  (MacroDecl (block) @function.inside)
+  (PropDecl) @function.inside
 ] @function.around
 
-; Class methods (nested in class/struct)
-(classBody
-  (functionDefinition) @method.around
-  (functionDefinition (block) @method.inside)
+; 类/结构体内部方法
+(ClassDecl
+  (Body
+    (FuncDecl) @method.around
+    (FuncDecl (block) @method.inside)
+  )
 )
 
-(structBody
-  (functionDefinition) @method.around
-  (functionDefinition (block) @method.inside)
+(StructDecl
+  (Body
+    (FuncDecl) @method.around
+    (FuncDecl (block) @method.inside)
+  )
 )
 
-; Comments
+; 主构造函数
+(PrimaryCtorDecl
+  () @method.around
+  (block) @method.inside
+)
+
+; 注释
 [
   (lineComment)
   (blockComment)
@@ -38,48 +50,50 @@
   (blockComment)
 ] @comment.around
 
-; Parameters
+; 参数
 [
-  (parameter) @parameter.around
+  (FuncParam) @parameter.around
   (namedParameter) @parameter.around
 ]
 
 [
-  (parameter (identifier) @parameter.inside) ; 参数名
-  (parameter (type) @parameter.inside) ; 参数类型
+  (FuncParam (identifier) @parameter.inside) ; 参数名
+  (FuncParam (type) @parameter.inside) ; 参数类型
   (namedParameter (identifier) @parameter.inside)
   (namedParameter (type) @parameter.inside)
-  (typeParameters (identifier) @parameter.inside)
-  (lambdaParameters (lambdaParameter) @parameter.inside)
-  (parameterList (parameters) @parameter.inside)
-  (primaryInitParamList (parameters) @parameter.inside)
+  (GenericParam (identifier) @parameter.inside)
+  (LambdaExpr (lambdaParameters (identifier) @parameter.inside))
+  (parameterList (FuncParam*) @parameter.inside)
+  (PrimaryCtorDecl (parameterList (FuncParam*) @parameter.inside))
 ] @parameter.around
 
-; Conditional/Loop statements
+; 条件/循环语句
 [
-  (if_statement) @conditional.around
-  (switch_statement) @conditional.around
-  (while_statement) @loop.around
-  (for_statement) @loop.around
+  (IfExpr) @conditional.around
+  (MatchExpr) @conditional.around
+  (WhileExpr) @loop.around
+  (DoWhileExpr) @loop.around
+  (ForInExpr) @loop.around
 ]
 
-(if_statement (block) @conditional.inside)
-(switch_statement (switch_body) @conditional.inside)
-(while_statement (block) @loop.inside)
-(for_statement (block) @loop.inside)
+(IfExpr (ifBlock) @conditional.inside)
+(MatchExpr (MatchCase*) @conditional.inside)
+(WhileExpr (block) @loop.inside)
+(DoWhileExpr (block) @loop.inside)
+(ForInExpr (block) @loop.inside)
 
-; Containers (array/object/struct literal)
+; 容器（数组/元组/结构体字面量）
 [
-  (arrayLiteral) @container.around
-  (objectLiteral) @container.around
-  (structLiteral) @container.around
+  (ArrayLiteral) @container.around
+  (TupleLiteral) @container.around
+  (StructLiteral) @container.around
 ]
 
-(arrayLiteral (arrayElements) @container.inside)
-(objectLiteral (objectProperties) @container.inside)
-(structLiteral (structFields) @container.inside)
+(ArrayLiteral (arrayElements) @container.inside)
+(TupleLiteral (tupleElements) @container.inside)
+(StructLiteral (structFields) @container.inside)
 
-; Strings
+; 字符串
 [
   (stringLiteral) @string.around
   (multilineString) @string.around
@@ -88,9 +102,9 @@
 (stringLiteral (stringContent) @string.inside)
 (multilineString (stringContent) @string.inside)
 
-; 类继承结构的文本对象（选中 class Son <: Father）
-(classDefinition
-  (className) @class.inside
+; 类继承结构（选中 class Son <: Father）
+(ClassDecl
+  (identifier) @class.inside
   "<:" @operator
   (typeIdentifier) @class.inside
 ) @class.around
