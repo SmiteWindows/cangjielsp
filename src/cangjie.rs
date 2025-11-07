@@ -15,7 +15,7 @@ struct CangjieLanguageServer;
 
 impl CangjieLanguageServer {
     // 定义唯一的语言服务器 ID
-    const LANGUAGE_SERVER_ID: &'static str = "cangjie-lsp";
+    const LANGUAGE_SERVER_ID: &'static str = "cangjie-language-server";
 
     // 构造函数
     fn new() -> Self {
@@ -27,15 +27,10 @@ impl CangjieLanguageServer {
     fn language_server_binary_path(&self, _: &LanguageServerId) -> zed::Result<String> {
         // 1. 尝试获取 CANGJIE_HOME 环境变量的值
         // 如果获取失败（例如环境变量未设置），则返回一个 Zed 错误
-        let cangjie_home = env::var("CANGJIE_HOME")
-                    .unwrap_or_else(|_| {
-                        // ** 🌟 修正：如果环境变量未设置，使用您已知的默认安装路径**
-                        eprintln!("Warning: CANGJIE_HOME not found in environment, defaulting to /Users/lsmiao/cangjie");
-                        "/Users/lsmiao/cangjie".to_string()
-                    });
+        let cangjie_home = env::var("CANGJIE_HOME").unwrap();
 
         // 2. 组合路径：${CANGJIE_HOME}/tools/bin/LSPServer
-        let binary_path = format!("{}/tools/bin/LSPServer", cangjie_home);
+        let binary_path = format!("{}/tools/bin/LSPServer.exe", cangjie_home);
 
         Ok(binary_path)
     }
@@ -70,15 +65,10 @@ impl zed::Extension for CangjieExtension {
 
                 // 🌟 2. 再次读取 CANGJIE_HOME 构造动态库路径
                 // 1. 获取 CANGJIE_HOME 环境变量的值，如果失败，使用默认路径
-                let cangjie_home = env::var("CANGJIE_HOME")
-                    .unwrap_or_else(|_| {
-                        // ** 🌟 修正：如果环境变量未设置，使用您已知的默认安装路径**
-                        eprintln!("Warning: CANGJIE_HOME not found in environment, defaulting to /Users/lsmiao/cangjie");
-                        "/Users/lsmiao/cangjie".to_string()
-                    });
+                let cangjie_home = env::var("CANGJIE_HOME").unwrap();
 
                 // 使用 CANGJIE_HOME 构造正确的动态库路径
-                let lib_path = format!("{}/runtime/lib/darwin_aarch64_llvm", cangjie_home);
+                let lib_path = format!("{}/runtime/lib/windows_x86_64_llvm", cangjie_home);
 
                 let mut env_map = HashMap::new();
 

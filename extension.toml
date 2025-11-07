@@ -12,6 +12,9 @@ repository = "https://github.com/SmiteWindows/cangjielsp"
 name = "cangjie-language-server"
 language = "Cangjie"
 
+[language_servers.cangjie-language-server.language_ids]
+"Cangjie" = "cangjie"
+
 [grammars.cangjie]
 repository = "https://gitcode.com/Cangjie-SIG/tree-sitter-cangjie"
 rev = "main"

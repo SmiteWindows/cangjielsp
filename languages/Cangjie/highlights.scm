@@ -66,6 +66,8 @@
     "Some"
     "Option"
     "String"
+    "Exception"
+    "Error"
 ] @type.builtin
 
 ; 关键字与修饰符
@@ -89,6 +91,7 @@
     "finally"
     "foreign"
     "get"
+    "handle"
     "if"
     "in"
     "is"
@@ -105,13 +108,15 @@
     "open"
     "operator"
     "override"
-    "prop"
-    "public"
     "package"
+    "perform"
+    "prop"
     "private"
     "protected"
+    "public"
     "quote"
     "redef"
+    "resume"
     "return"
     "sealed"
     "set"
@@ -125,6 +130,7 @@
     "true"
     "type"
     "throw"
+    "throwing"
     "unsafe"
     "var"
     "where"
@@ -195,6 +201,7 @@
     "@!"
     "#"
     "$"
+    "!in"
     ; "..."
     ; ","
 ] @operator
@@ -223,3 +230,6 @@
   (typeIdentifier) @local.reference
   (#set! reference.kind "type")
 )
+; @Deprecated @Attribute @Frozen @FastNative @When
+; @sourcePackage() @sourceFile() @sourceLine()
+; macro package
