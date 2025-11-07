@@ -19,5 +19,5 @@ language = "Cangjie"
 repository = "https://gitcode.com/Cangjie-SIG/tree-sitter-cangjie"
 rev = "main"
 
-[debug_adapters.Cangjie]
-schema_path = "debug_adapter_schemas/Cangjie.json"
+# [debug_adapters.Cangjie]
+# schema_path = "debug_adapter_schemas/Cangjie.json"

@@ -1,0 +1,30 @@
+[
+  {
+    "label": "cangjie build",
+    "command": "cjpm",
+    "args": ["build"],
+    "tags": ["cangjie-build"]
+  },
+  {
+    "label": "cangjie build run",
+    "command": "cjpm",
+    "args": ["build", "run"],
+    "tags": ["cangjie-build-run"]
+  },
+  {
+    "label": "cangjie build test",
+    "command": "cjpm",
+    "args": ["build", "test"]
+  },
+  {
+    "label": "cangjie test",
+    "command": "cjpm",
+    "args": [
+      "test",
+      "$CANGJIE_FILE",
+      "--test-filter",
+      "\"$ZED_CUSTOM_CANGJIE_TEST_NAME\""
+    ],
+    "tags": ["cangjie-test"]
+  }
+]
