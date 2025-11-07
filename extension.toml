@@ -1,0 +1,20 @@
+id = "cangjie"
+name = "Cangjie"
+description = "Cangjie support."
+version = "0.1.0"
+schema_version = 1
+authors = [
+    "Smite Rust <https://github.com/SmiteWindows>",
+]
+repository = "https://github.com/SmiteWindows/cangjielsp"
+
+[language_servers.cangjie-language-server]
+name = "cangjie-language-server"
+language = "Cangjie"
+
+[grammars.cangjie]
+repository = "https://gitcode.com/Cangjie-SIG/tree-sitter-cangjie"
+rev = "main"
+
+[debug_adapters.Cangjie]
+schema_path = "debug_adapter_schemas/Cangjie.json"
