@@ -1,20 +1,20 @@
 //! 仓颉语言 Zed 扩展（cangjielsp）
 //! 整合 cjpm/cjdb/cjlint/cjfmt/cjcov/cjprof 工具链，提供全流程开发支持
-#![warn(missing_docs, unused_imports, unused_variables)]
+// #![warn(missing_docs, unused_imports, unused_variables)]
 
 // 导出核心模块供 Zed 调用
+pub mod cjcov;
+pub mod cjdb;
+pub mod cjfmt;
+pub mod cjlint;
+pub mod cjpm;
+pub mod cjprof;
 pub mod config;
+pub mod corpus;
 pub mod extension;
 pub mod language_server;
-pub mod syntax;
-pub mod corpus;
 pub mod rag_utils;
-pub mod cjpm;
-pub mod cjdb;
-pub mod cjlint;
-pub mod cjfmt;
-pub mod cjcov;
-pub mod cjprof;
+pub mod syntax;
 
 // 暴露扩展入口
 pub use extension::CangjieExtension;

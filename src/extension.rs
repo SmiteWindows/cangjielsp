@@ -230,6 +230,13 @@ impl CangjieExtension {
 
 // 实现 Zed 的 Extension trait，处理命令和 LSP 回调
 impl zed::Extension for CangjieExtension {
+    fn new() -> Self {
+        Self {
+            worktree: None,
+            lsp_server: LspServer::new(),
+        }
+    }
+
     fn initialize(&mut self, worktree: zed::Worktree) -> zed::Result<()> {
         info!(
             "扩展初始化，工作目录: {}",
@@ -335,7 +342,7 @@ impl zed::LanguageServer for CangjieExtension {
         self.lsp_server.completion(document, position)
     }
 
-    fn document_symbols(&self, document: &zed::Document) -> zed::Result<Vec<zed::Symbol>> {
+    fn document_symbols(&self, document: &zed::Document) -> zed::Result<Vec<zed: lsp::Symbol>> {
         self.lsp_server.document_symbols(document)
     }
 
