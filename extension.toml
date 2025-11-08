@@ -1,137 +1,48 @@
-# 文档要求：核心元信息（必填）
 id = "cangjie"
-name = "Cangjie Language Support"
-description = "全面的仓颉语言支持：语法高亮、代码补全、调试、构建集成（基于 CJNative 后端）"
+name = "Cangjie"
+description = "提供仓颉语言的完整支持，包括语法高亮、代码补全、诊断和调试功能（基于官方SDK）"
 version = "0.2.0"
 schema_version = 1
 authors = ["Smite Rust <https://github.com/SmiteWindows>"]
 repository = "https://github.com/SmiteWindows/cangjielsp"
-license = "Apache-2.0"
-categories = ["languages", "debuggers", "build-tools"]
-keywords = ["cangjie", "仓颉", "lsp", "debug", "cjpm"]
+license = "Apache 2.0"
 
-# 文档要求：激活条件（精准触发）
-[activation]
-file_types = ["cj", "cj.d"]
-configuration = ["cangjie"]
-workspace_files = ["cjpm.toml"]
-# 文档要求：语言服务器配置（与代码中 CANGJIE_LS_ID 一致）
 [language_servers.cangjie-language-server]
-name = "Cangjie Language Server"
+name = "cangjie-language-server"
 language = "Cangjie"
-config_schema = "languages/Cangjie/schema.json"
+# 明确指定命令（可选，优先级低于代码中的逻辑，但增强可读性）
+command = "LSPServer"
 
 [language_servers.cangjie-language-server.language_ids]
 "Cangjie" = "cangjie"
 
-# 文档要求：语法解析器配置（Tree-sitter 规范）
 [grammars.cangjie]
 repository = "https://gitcode.com/Cangjie-SIG/tree-sitter-cangjie"
 rev = "main"
-path = "grammars/tree-sitter-cangjie"
-file_types = ["cj", "cj.d"]
+path = "tree-sitter-cangjie" # 明确语法库路径
 
-# 文档要求：调试适配器配置（与代码中 CANGJIE_DAP_ID 一致）
-[debug_adapters.cangjie-dap]
-name = "Cangjie Debugger"
-language = "Cangjie"
+[debug_adapters.Cangjie]
 schema_path = "debug_adapter_schemas/Cangjie.json"
 supports_launch = true
 supports_attach = false
 
-# 文档要求：Slash 命令配置（与代码中命令名一致）
-# Slash 命令（Zed 快捷命令）
-[slash_commands]
-# 基础命令
-"cangjie: build" = { description = "构建项目（cj build）" }
-"cangjie: run" = { description = "运行项目（cj run）" }
-"cangjie: test" = { description = "运行测试（cj test）" }
-"cangjie: clean" = { description = "清理构建产物（cj clean）" }
-"cangjie: check" = { description = "静态检查代码（cj check）" }
-"cangjie: fmt" = { description = "格式化项目代码（cj fmt）" }
-"cangjie: doc" = { description = "生成项目文档（cj doc）" }
-"cangjie: new" = { description = "创建新项目（cj new）" }
-"cangjie: check-env" = { description = "检查仓颉环境完整性" }
-
-# 包管理命令
-"cangjie: pkg: add" = { description = "添加依赖（cj pkg add <name> [--dev]）" }
-"cangjie: pkg: remove" = { description = "移除依赖（cj pkg remove <name> [--dev]）" }
-"cangjie: pkg: update" = { description = "更新依赖（cj pkg update [name/all]）" }
-"cangjie: pkg: list" = { description = "列出依赖（cj pkg list）" }
-
-# 模块命令
-"cangjie: mod: create" = { description = "创建模块（cj mod create <name> [--path]）" }
-"cangjie: mod: export" = { description = "导出模块（cj mod export <name>）" }
-
-# 扩展配置（与代码中 CangjieConfig 对齐）
+# 扩展配置默认值（与 CangjieLspConfig 对齐）
 [configuration.cangjie]
 type = "table"
-description = "仓颉扩展配置（参考：https://gitcode.com/Cangjie/cangjie_docs/tree/dev）"
+description = "仓颉语言扩展配置"
 
-[configuration.cangjie.sdk_path]
+[configuration.cangjie.disable_auto_import]
+type = "boolean"
+description = "禁用自动导入功能"
+default = true
+
+[configuration.cangjie.enable_log]
+type = "boolean"
+description = "启用语言服务器日志"
+default = true
+
+[configuration.cangjie.log_level]
 type = "string"
-description = "仓颉 SDK 路径（覆盖 CANGJIE_HOME 环境变量）"
-default = null
-
-[configuration.cangjie.lsp]
-type = "table"
-description = "LSP 相关配置"
-
-[configuration.cangjie.lsp.log_level]
-type = "string"
-description = "LSP 日志级别"
+description = "日志级别（trace/debug/info/warn/error）"
 default = "info"
 enum = ["trace", "debug", "info", "warn", "error"]
-
-[configuration.cangjie.lsp.auto_import]
-type = "boolean"
-description = "启用自动导入功能"
-default = true
-
-[configuration.cangjie.formatting]
-type = "table"
-description = "代码格式化配置（参考：https://gitcode.com/Cangjie/cangjie_docs/blob/dev/toolchain/fmt.md）"
-
-[configuration.cangjie.formatting.indent_size]
-type = "integer"
-description = "缩进长度（空格数）"
-default = 4
-enum = [2, 4, 8]
-
-[configuration.cangjie.formatting.line_width]
-type = "integer"
-description = "代码行宽限制"
-default = 120
-minimum = 80
-maximum = 160
-
-[configuration.cangjie.formatting.use_tabs]
-type = "boolean"
-description = "使用制表符缩进"
-default = false
-
-[configuration.cangjie.formatting.newline_style]
-type = "string"
-description = "换行符风格"
-default = "lf"
-enum = ["lf", "crlf", "cr"]
-
-[configuration.cangjie.debug]
-type = "table"
-description = "调试相关配置（参考：https://gitcode.com/Cangjie/cangjie_docs/blob/dev/debugging/README.md）"
-
-[configuration.cangjie.debug.track_goroutines]
-type = "boolean"
-description = "调试时追踪协程状态"
-default = true
-
-[configuration.cangjie.debug.show_async_stack]
-type = "boolean"
-description = "调试时显示异步调用栈"
-default = true
-
-[configuration.cangjie.debug.debug_info_level]
-type = "string"
-description = "调试信息详细程度"
-default = "full"
-enum = ["full", "limited", "none"]
