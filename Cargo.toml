@@ -1,22 +1,18 @@
 [package]
 name = "cangjielsp"
-version = "0.2.0"
-edition = "2021"  # 与 zed_extension_api 兼容的稳定版本
+version = "0.1.0"
+edition = "2024"
 publish = false
 license = "Apache-2.0"
-description = "Zed editor extension for Cangjie programming language"
-homepage = "https://github.com/SmiteWindows/cangjielsp"
-repository = "https://github.com/SmiteWindows/cangjielsp"
 
 [lib]
-crate-type = ["cdylib"]  # 文档要求：Zed 扩展必须为 cdylib 类型
-path = "src/lib.rs"
-
-# 文档要求：WASM 目标配置（Zed 扩展支持 WASM 运行时）
-[target.'cfg(target_arch = "wasm32")']
 crate-type = ["cdylib"]
 
+# path = "src/cangjie.rs"
+
+# target = "wasm32-wasi"
+
 [dependencies]
-zed_extension_api = "0.7.0"  # 严格匹配文档指定版本
-serde = { version = "1.0.195", features = ["derive"] }  # 文档推荐版本
-serde_json = "1.0.111"  # 与 serde 兼容
+zed_extension_api = "0.7.0"
+# serde = { version = "1.0.130", features = ["derive"] }
+# serde_json = "1.0.145"

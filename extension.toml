@@ -1,64 +1,23 @@
-# 扩展元信息（与 Extension::meta() 完全一致）
 id = "cangjie"
 name = "Cangjie"
-description = "仓颉语言 Zed 扩展（严格遵循 Zed Extension API 规范）"
-version = "0.4.0"
+description = "Cangjie support."  # 保留原始简洁描述
+version = "0.1.0"
 schema_version = 1
-authors = ["Smite Rust <https://github.com/SmiteWindows>"]
+authors = [
+    "Smite Rust <https://github.com/SmiteWindows>",
+]
 repository = "https://github.com/SmiteWindows/cangjielsp"
-license = "Apache-2.0"
-categories = ["languages", "debuggers", "build-tools"]
-keywords = ["cangjie", "仓颉", "lsp", "zed", "official"]
 
-# 语言服务器配置（API 语言服务器规范）
 [language_servers.cangjie-language-server]
 name = "cangjie-language-server"
 language = "Cangjie"
-command = "LSPServer" # 与 binary_filename 一致
-config_schema = "languages/Cangjie/schema.json" # API 推荐的配置校验
 
 [language_servers.cangjie-language-server.language_ids]
-"Cangjie" = "cangjie" # 必须与语言配置的 id 一致
+"Cangjie" = "cangjie"
 
-# 语法高亮配置（API 语法库规范）
 [grammars.cangjie]
 repository = "https://gitcode.com/Cangjie-SIG/tree-sitter-cangjie"
 rev = "main"
-path = "tree-sitter-cangjie"
-file_types = ["cj", "cj.d"] # 与语言配置的 path_suffixes 一致
 
-# 调试适配器配置（API 调试规范）
-[debug_adapters.Cangjie]
-name = "Cangjie Debugger"
-language = "Cangjie"
-schema_path = "debug_adapter_schemas/Cangjie.json"
-supports_launch = true
-supports_attach = false
-supports_concurrent_debug = true # API 并发调试支持
-supports_async_debug = true # API 异步调试支持
-
-# 扩展配置（与 CangjieLspConfig 完全对齐）
-[configuration.cangjie]
-type = "table"
-description = "仓颉语言扩展配置（遵循 Zed Extension API 规范）"
-
-[configuration.cangjie.disable_auto_import]
-type = "boolean"
-description = "禁用自动导入功能"
-default = true
-
-[configuration.cangjie.enable_log]
-type = "boolean"
-description = "启用 LSP 日志（与 Zed 日志系统集成）"
-default = true
-
-[configuration.cangjie.log_level]
-type = "string"
-description = "日志级别（与 Zed 日志级别一致）"
-default = "info"
-enum = ["trace", "debug", "info", "warn", "error"] # 与 zed::LogLevel 枚举值一致
-
-[configuration.cangjie.workspace_dir]
-type = "string"
-description = "LSP 工作目录（可选，默认使用项目根目录）"
-default = null
+# [debug_adapters.Cangjie]
+# schema_path = "debug_adapter_schemas/Cangjie.json"

@@ -1,10 +1,12 @@
 name = "Cangjie"
-id = "cangjie" # 必须与 language_ids 中的值一致
-grammar = "cangjie" # 与 grammars 中的名称一致
-path_suffixes = ["cj", "cj.d"] # 与语法库 file_types 对齐
+grammar = "cangjie"
+path_suffixes = ["cj","cj.d"]  # 保留原始后缀格式
 line_comments = ["//"]
-block_comments = [["/*", "*/"]]
 tab_size = 4
 hard_tabs = false
-first_line_pattern = "^#!.*\\bcangjie\\b" # 脚本文件识别
-debuggers = ["Cangjie"] # 关联调试适配器
+
+# 可选：添加第一行模式来识别文件
+# first_line_pattern = "^#!.*\\bcangjie\\b"
+
+# 支持的调试器
+# debuggers = ["Cangjie"]
