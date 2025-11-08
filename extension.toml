@@ -14,7 +14,7 @@ keywords = ["cangjie", "仓颉", "lsp", "debug", "cjpm"]
 [activation]
 file_types = ["cj", "cj.d"]
 configuration = ["cangjie"]
-
+workspace_files = ["cjpm.toml"]
 # 文档要求：语言服务器配置（与代码中 CANGJIE_LS_ID 一致）
 [language_servers.cangjie-language-server]
 name = "Cangjie Language Server"
@@ -40,45 +40,98 @@ supports_launch = true
 supports_attach = false
 
 # 文档要求：Slash 命令配置（与代码中命令名一致）
+# Slash 命令（Zed 快捷命令）
 [slash_commands]
-"cangjie: build" = { description = "使用 cjpm 构建仓颉项目（参数：[目标架构] [构建类型]）" }
-"cangjie: run" = { description = "运行仓颉编译产物（参数：[程序路径]）" }
-"cangjie: test" = { description = "运行仓颉测试用例（参数：[测试过滤规则]）" }
-"cangjie: clean" = { description = "清理仓颉项目构建产物" }
-"cangjie: check-env" = { description = "检查仓颉环境配置（CANGJIE_HOME、工具链完整性）" }
+# 基础命令
+"cangjie: build" = { description = "构建项目（cj build）" }
+"cangjie: run" = { description = "运行项目（cj run）" }
+"cangjie: test" = { description = "运行测试（cj test）" }
+"cangjie: clean" = { description = "清理构建产物（cj clean）" }
+"cangjie: check" = { description = "静态检查代码（cj check）" }
+"cangjie: fmt" = { description = "格式化项目代码（cj fmt）" }
+"cangjie: doc" = { description = "生成项目文档（cj doc）" }
+"cangjie: new" = { description = "创建新项目（cj new）" }
+"cangjie: check-env" = { description = "检查仓颉环境完整性" }
 
-# 文档要求：配置项定义（用户可配置）
+# 包管理命令
+"cangjie: pkg: add" = { description = "添加依赖（cj pkg add <name> [--dev]）" }
+"cangjie: pkg: remove" = { description = "移除依赖（cj pkg remove <name> [--dev]）" }
+"cangjie: pkg: update" = { description = "更新依赖（cj pkg update [name/all]）" }
+"cangjie: pkg: list" = { description = "列出依赖（cj pkg list）" }
+
+# 模块命令
+"cangjie: mod: create" = { description = "创建模块（cj mod create <name> [--path]）" }
+"cangjie: mod: export" = { description = "导出模块（cj mod export <name>）" }
+
+# 扩展配置（与代码中 CangjieConfig 对齐）
 [configuration.cangjie]
 type = "table"
-description = "仓颉语言扩展配置"
+description = "仓颉扩展配置（参考：https://gitcode.com/Cangjie/cangjie_docs/tree/dev）"
 
 [configuration.cangjie.sdk_path]
 type = "string"
 description = "仓颉 SDK 路径（覆盖 CANGJIE_HOME 环境变量）"
-default = ""
-
-[configuration.cangjie.build]
-type = "table"
-description = "构建配置"
-
-[configuration.cangjie.build.target]
-type = "string"
-description = "默认构建目标架构"
-default = "native"
-enum = ["native", "ohos-aarch64", "ohos-x86_64", "windows-x86_64", "linux-x86_64"]
-
-[configuration.cangjie.build.type]
-type = "string"
-description = "默认构建类型"
-default = "debug"
-enum = ["debug", "release"]
+default = null
 
 [configuration.cangjie.lsp]
 type = "table"
-description = "语言服务器配置"
+description = "LSP 相关配置"
 
 [configuration.cangjie.lsp.log_level]
 type = "string"
 description = "LSP 日志级别"
 default = "info"
-enum = ["error", "warn", "info", "debug", "trace"]
+enum = ["trace", "debug", "info", "warn", "error"]
+
+[configuration.cangjie.lsp.auto_import]
+type = "boolean"
+description = "启用自动导入功能"
+default = true
+
+[configuration.cangjie.formatting]
+type = "table"
+description = "代码格式化配置（参考：https://gitcode.com/Cangjie/cangjie_docs/blob/dev/toolchain/fmt.md）"
+
+[configuration.cangjie.formatting.indent_size]
+type = "integer"
+description = "缩进长度（空格数）"
+default = 4
+enum = [2, 4, 8]
+
+[configuration.cangjie.formatting.line_width]
+type = "integer"
+description = "代码行宽限制"
+default = 120
+minimum = 80
+maximum = 160
+
+[configuration.cangjie.formatting.use_tabs]
+type = "boolean"
+description = "使用制表符缩进"
+default = false
+
+[configuration.cangjie.formatting.newline_style]
+type = "string"
+description = "换行符风格"
+default = "lf"
+enum = ["lf", "crlf", "cr"]
+
+[configuration.cangjie.debug]
+type = "table"
+description = "调试相关配置（参考：https://gitcode.com/Cangjie/cangjie_docs/blob/dev/debugging/README.md）"
+
+[configuration.cangjie.debug.track_goroutines]
+type = "boolean"
+description = "调试时追踪协程状态"
+default = true
+
+[configuration.cangjie.debug.show_async_stack]
+type = "boolean"
+description = "调试时显示异步调用栈"
+default = true
+
+[configuration.cangjie.debug.debug_info_level]
+type = "string"
+description = "调试信息详细程度"
+default = "full"
+enum = ["full", "limited", "none"]
