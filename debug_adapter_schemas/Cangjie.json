@@ -1,58 +1,69 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Cangjie Debug Configuration",
   "type": "object",
-  "required": ["type", "program"],
+  "title": "Cangjie Debug Configuration",
   "properties": {
     "type": {
       "type": "string",
-      "const": "cangjie-dap"
+      "const": "Cangjie",
+      "description": "调试器类型（固定为 Cangjie）"
     },
     "name": {
       "type": "string",
-      "default": "Cangjie Debug"
+      "description": "调试配置名称（自定义）"
     },
-    "program": {
+    "request": {
       "type": "string",
-      "description": "要调试的可执行文件路径（cj build 产物，参考：https://gitcode.com/Cangjie/cangjie_docs/blob/dev/toolchain/build.md）"
+      "enum": ["launch", "attach"],
+      "default": "launch",
+      "description": "调试请求类型：启动（launch）或附加（attach）"
+    },
+    "target": {
+      "type": "string",
+      "description": "目标二进制文件路径（默认自动识别 cjpm 构建产物）"
     },
     "args": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "程序运行参数"
+      "description": "目标程序运行参数"
     },
     "cwd": {
       "type": "string",
       "default": "${workspaceFolder}",
-      "description": "工作目录"
+      "description": "工作目录（默认项目根目录）"
     },
-    "stopOnEntry": {
+    "port": {
+      "type": "integer",
+      "default": 50051,
+      "description": "调试端口（与 cjdb 配置一致）"
+    },
+    "timeout": {
+      "type": "integer",
+      "default": 30,
+      "description": "调试超时时间（秒）"
+    },
+    "trackCoroutines": {
+      "type": "boolean",
+      "default": true,
+      "description": "启用协程追踪（仓颉特色功能）"
+    },
+    "performanceProfiling": {
       "type": "boolean",
       "default": false,
-      "description": "启动后立即中断"
+      "description": "调试时启用性能采样（与 cjprof 联动）"
     },
-    "target": {
-      "type": "string",
-      "default": "native",
-      "description": "构建目标架构（参考：https://gitcode.com/Cangjie/cangjie_docs/blob/dev/toolchain/targets.md）"
-    },
-    "trackGoroutines": {
-      "type": "boolean",
-      "default": true,
-      "description": "追踪协程状态"
-    },
-    "showAsyncStack": {
-      "type": "boolean",
-      "default": true,
-      "description": "显示异步调用栈"
-    },
-    "debugInfoLevel": {
-      "type": "string",
-      "default": "full",
-      "description": "调试信息详细程度",
-      "enum": ["full", "limited", "none"]
+    "profilingTypes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["Cpu", "Memory", "Coroutine", "Lock", "Io", "Gc"]
+      },
+      "default": ["Cpu", "Coroutine"],
+      "description": "性能采样类型（仅 performanceProfiling 为 true 时有效）"
     }
-  }
+  },
+  "required": ["type", "name", "request"],
+  "additionalProperties": false
 }

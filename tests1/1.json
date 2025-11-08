@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cangjie Debug Configuration",
+  "type": "object",
+  "required": ["type", "program"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "cangjie-dap"
+    },
+    "name": {
+      "type": "string",
+      "default": "Cangjie Debug"
+    },
+    "program": {
+      "type": "string",
+      "description": "要调试的可执行文件路径（cj build 产物，参考：https://gitcode.com/Cangjie/cangjie_docs/blob/dev/toolchain/build.md）"
+    },
+    "args": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "程序运行参数"
+    },
+    "cwd": {
+      "type": "string",
+      "default": "${workspaceFolder}",
+      "description": "工作目录"
+    },
+    "stopOnEntry": {
+      "type": "boolean",
+      "default": false,
+      "description": "启动后立即中断"
+    },
+    "target": {
+      "type": "string",
+      "default": "native",
+      "description": "构建目标架构（参考：https://gitcode.com/Cangjie/cangjie_docs/blob/dev/toolchain/targets.md）"
+    },
+    "trackGoroutines": {
+      "type": "boolean",
+      "default": true,
+      "description": "追踪协程状态"
+    },
+    "showAsyncStack": {
+      "type": "boolean",
+      "default": true,
+      "description": "显示异步调用栈"
+    },
+    "debugInfoLevel": {
+      "type": "string",
+      "default": "full",
+      "description": "调试信息详细程度",
+      "enum": ["full", "limited", "none"]
+    }
+  }
+}

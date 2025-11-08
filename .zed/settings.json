@@ -1,0 +1,20 @@
+{
+  "Cangjie": {
+    "sdk_path": "/path/to/cangjie-sdk",
+    "lsp": {
+      "log_level": "info",
+      "auto_import": true
+    },
+    "formatting": {
+      "indent_size": 4,
+      "line_width": 120,
+      "use_tabs": false,
+      "newline_style": "lf"
+    },
+    "debug": {
+      "track_goroutines": true,
+      "show_async_stack": true,
+      "debug_info_level": "full"
+    }
+  }
+}

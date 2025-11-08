@@ -1,12 +1,40 @@
+# name = "Cangjie"
+# grammar = "cangjie"
+# path_suffixes = ["cj","cj.d"]  # 保留原始后缀格式
+# line_comments = ["//"]
+# tab_size = 4
+# hard_tabs = false
+
+# # 可选：添加第一行模式来识别文件
+# # first_line_pattern = "^#!.*\\bcangjie\\b"
+
+# # 支持的调试器
+# # debuggers = ["Cangjie"]
+# #
+
 name = "Cangjie"
-grammar = "cangjie"
-path_suffixes = ["cj","cj.d"]  # 保留原始后缀格式
-line_comments = ["//"]
-tab_size = 4
-hard_tabs = false
+id = "cangjie"
+display_name = "Cangjie"
+description = "仓颉编程语言"
+file_extensions = ["cj"]
+first_line_match = "^#!.*cj|^//.*Cangjie"
 
-# 可选：添加第一行模式来识别文件
-# first_line_pattern = "^#!.*\\bcangjie\\b"
+[grammar]
+name = "cangjie"
+scope = "source.cangjie"
 
-# 支持的调试器
-# debuggers = ["Cangjie"]
+[highlights]
+scope = "source.cangjie"
+inherits = "rust"  # 继承 Rust 高亮基础（可自定义覆盖）
+
+[completions]
+trigger_on = [".", "::", "fn ", "struct ", "let ", "const ", "import "]
+snippets_path = "snippets.scm"
+
+[formatter]
+command = "cjfmt"
+args = ["--stdin", "--stdin-filename", "${filename}"]
+
+[linter]
+command = "cjlint"
+args = ["--stdin", "--stdin-filename", "${filename}", "--format", "json"]

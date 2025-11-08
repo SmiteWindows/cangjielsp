@@ -1,18 +1,78 @@
+# [package]
+# name = "cangjielsp"
+# version = "0.1.0"
+# edition = "2024"
+# publish = false
+# license = "Apache-2.0"
+
+# [lib]
+# crate-type = ["cdylib"]
+
+# # path = "src/cangjie.rs"
+
+# # target = "wasm32-wasi"
+
+# [dependencies]
+# zed_extension_api = "0.7.0"
+# # serde = { version = "1.0.130", features = ["derive"] }
+# # serde_json = "1.0.145"
 [package]
-name = "cangjielsp"
+name = "cangjie-lsp"
 version = "0.1.0"
-edition = "2024"
-publish = false
+edition = "2021"
+description = "Zed 编辑器仓颉语言 LSP 扩展"
+authors = ["Cangjie Dev Team"]
 license = "Apache-2.0"
+repository = "https://github.com/cangjie-lang/cangjie-zed-extension"
+keywords = ["cangjie", "zed", "lsp", "language-server"]
+categories = ["development-tools", "development-tools::libraries"]
 
+# 编译配置
 [lib]
-crate-type = ["cdylib"]
+name = "cangjie_lsp"
+crate-type = ["cdylib"]  # Zed 扩展要求动态库格式
 
-# path = "src/cangjie.rs"
-
-# target = "wasm32-wasi"
+[bin]
+cangjie-lsp = "src/bin/main.rs"  # LSP 可执行文件入口
 
 [dependencies]
-zed_extension_api = "0.7.0"
-# serde = { version = "1.0.130", features = ["derive"] }
-# serde_json = "1.0.145"
+# Zed 扩展 API
+zed_extension_api = { version = "0.7.0", features = ["full"] }
+
+# 序列化/反序列化
+serde = { version = "1.0.195", features = ["derive", "rc"] }
+serde_json = "1.0.111"
+toml = { version = "0.8.10", features = ["serde"] }
+
+# 语法分析/正则
+regex = "1.10.3"
+glob = "0.3.1"
+
+# 文件系统/进程
+std-fs = "0.1.4"
+tokio = { version = "1.35.1", features = ["full"] }  # 异步支持
+async-process = "2.0.1"
+
+# 日志
+log = "0.4.20"
+env_logger = "0.10.0"
+
+# 数据结构
+hashbrown = "0.14.3"
+indexmap = { version = "2.2.2", features = ["serde"] }
+
+[dev-dependencies]
+zed_extension_test_api = "0.7.0"
+tempfile = "3.8.1"
+rstest = "0.18.2"
+
+# 编译优化
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = "debuginfo"  # 剥离调试信息，减小二进制体积
+
+[profile.dev]
+opt-level = 1  # 开发模式也开启基础优化，提升调试体验
+debug = true

@@ -1,0 +1,25 @@
+name = "CangjieCjdb"
+id = "cangjie-cjdb"
+display_name = "Cangjie cjdb"
+description = "仓颉 cjdb 调试配置文件"
+file_extensions = ["cjdb.toml"]
+first_line_match = "^#.*cjdb"
+
+[grammar]
+name = "toml"
+scope = "source.toml.cangjie.cjdb"
+
+[highlights]
+inherits = "toml"
+additional_patterns = [
+  { match = "(session|breakpoints|logging|performance)", scope = "keyword.section.cjdb" },
+  { match = "(port|timeout|attach_child_processes|enable_coroutine_debug)", scope = "keyword.attribute.session" },
+  { match = "(enable_profiling|profiling_types|profiling_interval)", scope = "keyword.attribute.performance" },
+]
+
+[completions]
+trigger_on = ["."]
+snippets = [
+  { label = "session", insert_text = "[session]\nport = ${1:50051}\ntimeout = ${2:30}\nattach_child_processes = ${3:false}\nenable_coroutine_debug = ${4:true}\n" },
+  { label = "performance", insert_text = "[performance]\nenable_profiling = ${1:false}\nprofiling_types = [${2:\"Cpu\", \"Coroutine\"}]\nprofiling_interval = ${3:20}\n" },
+]

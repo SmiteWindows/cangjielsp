@@ -1,0 +1,30 @@
+name = "CangjieCjprof"
+id = "cangjie-cjprof"
+display_name = "Cangjie cjprof"
+description = "仓颉 cjprof 性能分析配置文件"
+file_extensions = ["cjprof.toml"]
+first_line_match = "^#.*cjprof"
+
+[grammar]
+name = "toml"
+scope = "source.toml.cangjie.cjprof"
+
+[highlights]
+inherits = "toml"
+additional_patterns = [
+  { match = "(sample|analyze|report|ignore|threshold|advanced)", scope = "keyword.section.cjprof" },
+  { match = "(types|interval|duration|dir|incremental|enable_debug_info)", scope = "keyword.attribute.sample" },
+  { match = "(hotspot_threshold|call_stack_depth|merge_same_stacks)", scope = "keyword.attribute.analyze" },
+  { match = "(formats|flamegraph|show_optimization_hints)", scope = "keyword.attribute.report" },
+  { match = "(Cpu|Memory|Coroutine|Lock|Io|Gc)", scope = "constant.language.sample_type" },
+  { match = "(Text|Html|Json|Sarif|Flamegraph)", scope = "constant.language.report_format" },
+]
+
+[completions]
+trigger_on = ["."]
+snippets = [
+  { label = "sample", insert_text = "[sample]\ntypes = [${1:\"Cpu\", \"Coroutine\", \"Memory\"}]\ninterval = ${2:10}\nduration = ${3:30}\ndir = \"${4:target/cjprof/samples}\"\nincremental = ${5:false}\nenable_debug_info = ${6:true}\n" },
+  { label = "analyze", insert_text = "[analyze]\nhotspot_threshold = ${1:5.0}\ncall_stack_depth = ${2:32}\nmerge_same_stacks = ${3:true}\n" },
+  { label = "report", insert_text = "[report]\nformats = [${1:\"Text\", \"Html\", \"Flamegraph\"}]\ndir = \"${2:target/cjprof/reports}\"\n[report.flamegraph]\nenable = ${3:true}\nwidth = ${4:1200}\nheight = ${5:600}\ntheme = \"${6:Color}\"\nshow_optimization_hints = ${7:true}\n" },
+  { label = "threshold", insert_text = "[threshold]\ncpu_usage = ${1:80.0}\nmemory_leak = ${2:1024.0}\ncoroutine_count = ${3:1000}\nlock_contention = ${4:10.0}\n" },
+]

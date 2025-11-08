@@ -1,23 +1,78 @@
-id = "cangjie"
-name = "Cangjie"
-description = "Cangjie support."  # 保留原始简洁描述
+# id = "cangjie"
+# name = "Cangjie"
+# description = "Cangjie support."  # 保留原始简洁描述
+# version = "0.1.0"
+# schema_version = 1
+# authors = [
+#     "Smite Rust <https://github.com/SmiteWindows>",
+# ]
+# repository = "https://github.com/SmiteWindows/cangjielsp"
+
+# [language_servers.cangjie-language-server]
+# name = "cangjie-language-server"
+# language = "Cangjie"
+
+# [language_servers.cangjie-language-server.language_ids]
+# "Cangjie" = "cangjie"
+
+# [grammars.cangjie]
+# repository = "https://gitcode.com/Cangjie-SIG/tree-sitter-cangjie"
+# rev = "main"
+
+# # [debug_adapters.Cangjie]
+# # schema_path = "debug_adapter_schemas/Cangjie.json"
+name = "cangjie-lsp"
+display_name = "Cangjie Language Support"
+description = "全功能仓颉语言支持：语法高亮、代码补全、调试、性能分析、覆盖率检测"
 version = "0.1.0"
-schema_version = 1
-authors = [
-    "Smite Rust <https://github.com/SmiteWindows>",
-]
-repository = "https://github.com/SmiteWindows/cangjielsp"
+author = "Cangjie Dev Team"
+license = "Apache-2.0"
+repository = "https://github.com/cangjie-lang/cangjie-zed-extension"
+categories = ["Languages", "Debuggers", "Formatters", "Linters", "Profilers"]
+keywords = ["cangjie", "仓颉", "lsp", "debug", "format", "lint", "profile"]
 
-[language_servers.cangjie-language-server]
-name = "cangjie-language-server"
-language = "Cangjie"
+# 依赖配置
+[dependencies]
+zed_extension_api = "0.7.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+regex = "1.10"
+glob = "0.3"
 
-[language_servers.cangjie-language-server.language_ids]
-"Cangjie" = "cangjie"
+# 语言配置
+[languages]
+"cangjie" = { path = "languages/Cangjie" }
+"cangjie-cjpm" = { path = "languages/CangjieCjpm" }
+"cangjie-cjdb" = { path = "languages/CangjieCjdb" }
+"cangjie-cjlint" = { path = "languages/CangjieCjlint" }
+"cangjie-cjfmt" = { path = "languages/CangjieCjfmt" }
+"cangjie-cjcov" = { path = "languages/CangjieCjcov" }
+"cangjie-cjprof" = { path = "languages/CangjieCjprof" }
 
-[grammars.cangjie]
-repository = "https://gitcode.com/Cangjie-SIG/tree-sitter-cangjie"
-rev = "main"
+# 调试适配器配置
+[debug_adapters]
+"Cangjie" = { path = "debug_adapter_schemas/Cangjie.json" }
 
-# [debug_adapters.Cangjie]
-# schema_path = "debug_adapter_schemas/Cangjie.json"
+# 扩展配置 schema
+[config_schema]
+path = "languages/Cangjie/schema.json"
+
+# 命令配置（供 Zed 调用）
+[commands]
+"cangjie.format" = { description = "格式化仓颉代码", handler = "format_document" }
+"cangjie.lint" = { description = "代码检查", handler = "run_lint" }
+"cangjie.build" = { description = "构建项目", handler = "build_project" }
+"cangjie.debug.start" = { description = "启动调试", handler = "start_debug_session" }
+"cangjie.coverage.collect" = { description = "收集覆盖率", handler = "collect_coverage" }
+"cangjie.coverage.open_report" = { description = "打开覆盖率报告", handler = "open_coverage_report" }
+"cangjie.profiler.start" = { description = "启动性能分析", handler = "start_profiling" }
+"cangjie.profiler.open_flamegraph" = { description = "打开火焰图", handler = "open_flamegraph" }
+
+# LSP 配置
+[lsp]
+name = "Cangjie Language Server"
+command = "cangjie-lsp"  # 编译后的二进制文件名
+args = ["--stdio"]
+language_ids = ["cangjie"]
+initialization_options = {}

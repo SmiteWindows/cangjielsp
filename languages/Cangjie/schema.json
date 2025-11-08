@@ -22,7 +22,77 @@
     "cangjie.workspace_dir": {
       "type": ["string", "null"],
       "description": "LSP 工作目录（可选，默认使用项目根目录）"
+    },
+
+    "lsp": {
+      "type": "object",
+      "title": "LSP Configuration",
+      "properties": {
+        "timeout_ms": {
+          "type": "integer",
+          "default": 5000,
+          "description": "LSP 启动超时时间（毫秒）"
+        },
+        "realtime_diagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用实时诊断"
+        },
+        "profiling_visualization": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用性能分析可视化"
+        }
+      }
+    },
+    "cjfmt": {
+      "type": "object",
+      "title": "cjfmt Configuration",
+      "properties": {
+        "indent": {
+          "type": "object",
+          "properties": {
+            "style": {
+              "type": "string",
+              "enum": ["space", "tab"],
+              "default": "space"
+            },
+            "size": {
+              "type": "integer",
+              "default": 4
+            }
+          }
+        },
+        "line_width": {
+          "type": "object",
+          "properties": {
+            "max": {
+              "type": "integer",
+              "default": 120
+            }
+          }
+        }
+      }
+    },
+    "cjlint": {
+      "type": "object",
+      "title": "cjlint Configuration",
+      "properties": {
+        "check_level": {
+          "type": "string",
+          "enum": ["error", "warn", "info", "off"],
+          "default": "warn"
+        },
+        "fix": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        }
+      }
     }
-  },
-  "additionalProperties": false
+  }
 }

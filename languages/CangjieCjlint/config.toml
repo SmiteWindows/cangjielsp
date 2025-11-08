@@ -1,0 +1,26 @@
+name = "CangjieCjlint"
+id = "cangjie-cjlint"
+display_name = "Cangjie cjlint"
+description = "仓颉 cjlint 代码检查配置文件"
+file_extensions = ["cjlint.toml"]
+first_line_match = "^#.*cjlint"
+
+[grammar]
+name = "toml"
+scope = "source.toml.cangjie.cjlint"
+
+[highlights]
+inherits = "toml"
+additional_patterns = [
+  { match = "(rules|exclude|include|check_level|fix|output_format)", scope = "keyword.section.cjlint" },
+  { match = "(enabled|level|options)", scope = "keyword.attribute.rule" },
+  { match = "(error|warn|info|off)", scope = "constant.language.level" },
+]
+
+[completions]
+trigger_on = ["."]
+snippets = [
+  { label = "check_level", insert_text = "check_level = \"${1:warn}\"\n" },
+  { label = "fix", insert_text = "[fix]\nenabled = ${1:false}\nbackup = ${2:true}\nrules = [${3:\"W001\", \"W002\"}]\n" },
+  { label = "rule", insert_text = "[rules.${1:rule_id}]\nenabled = ${2:true}\nlevel = \"${3:warn}\"\n" },
+]

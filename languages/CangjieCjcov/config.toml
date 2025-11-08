@@ -1,0 +1,26 @@
+name = "CangjieCjcov"
+id = "cangjie-cjcov"
+display_name = "Cangjie cjcov"
+description = "仓颉 cjcov 覆盖率配置文件"
+file_extensions = ["cjcov.toml"]
+first_line_match = "^#.*cjcov"
+
+[grammar]
+name = "toml"
+scope = "source.toml.cangjie.cjcov"
+
+[highlights]
+inherits = "toml"
+additional_patterns = [
+  { match = "(collect|report|filter|threshold|advanced)", scope = "keyword.section.cjcov" },
+  { match = "(full|partial|fast)", scope = "constant.language.mode" },
+  { match = "(text|html|json|xml|sarif)", scope = "constant.language.format" },
+]
+
+[completions]
+trigger_on = ["."]
+snippets = [
+  { label = "collect", insert_text = "[collect]\nmode = \"${1:full}\"\ndir = \"${2:src}\"\noutput_dir = \"${3:target/cjcov}\"\nenable_branch = ${4:true}\nenable_function = ${5:true}\n" },
+  { label = "report", insert_text = "[report]\nformats = [${1:\"text\", \"html\"}]\ndir = \"${2:target/cjcov/reports}\"\ngenerate_html = ${3:true}\n" },
+  { label = "threshold", insert_text = "[threshold]\nline = ${1:80}\nbranch = ${2:70}\nfunction = ${3:90}\nfail_on_missing = ${4:true}\n" },
+]

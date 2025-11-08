@@ -1,0 +1,26 @@
+name = "CangjieCjpm"
+id = "cangjie-cjpm"
+display_name = "Cangjie cjpm"
+description = "仓颉 cjpm 包配置文件"
+file_extensions = ["cjpm.toml"]
+first_line_match = "^#.*cjpm"
+
+[grammar]
+name = "toml"
+scope = "source.toml.cangjie.cjpm"
+
+[highlights]
+inherits = "toml"
+additional_patterns = [
+  { match = "(package|dependencies|dev_dependencies|build)", scope = "keyword.section.cjpm" },
+  { match = "(name|version|authors|description|license|repository)", scope = "keyword.attribute.package" },
+  { match = "(target|release|features|rustc_flags)", scope = "keyword.attribute.build" },
+]
+
+[completions]
+trigger_on = ["."]
+snippets = [
+  { label = "package", insert_text = "[package]\nname = \"${1:project_name}\"\nversion = \"0.1.0\"\nauthors = [\"${2:author}\"]\ndescription = \"${3:description}\"\nlicense = \"${4:MIT}\"\n" },
+  { label = "dependencies", insert_text = "[dependencies]\n${1:dep_name} = \"${2:version}\"\n" },
+  { label = "build", insert_text = "[build]\ntarget = \"${1:target_name}\"\nrelease = ${2:false}\nfeatures = [${3:\"feature1\"}]\n" },
+]

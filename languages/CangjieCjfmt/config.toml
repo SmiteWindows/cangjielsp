@@ -1,0 +1,26 @@
+name = "CangjieCjfmt"
+id = "cangjie-cjfmt"
+display_name = "Cangjie cjfmt"
+description = "仓颉 cjfmt 格式化配置文件"
+file_extensions = ["cjfmt.toml"]
+first_line_match = "^#.*cjfmt"
+
+[grammar]
+name = "toml"
+scope = "source.toml.cangjie.cjfmt"
+
+[highlights]
+inherits = "toml"
+additional_patterns = [
+  { match = "(indent|line_width|newline|space|naming|ignore|advanced)", scope = "keyword.section.cjfmt" },
+  { match = "(style|size)", scope = "keyword.attribute.indent" },
+  { match = "(snake_case|pascal_case|camel_case|upper_snake_case)", scope = "constant.language.naming" },
+]
+
+[completions]
+trigger_on = ["."]
+snippets = [
+  { label = "indent", insert_text = "[indent]\nstyle = \"${1:space}\"\nsize = ${2:4}\n" },
+  { label = "naming", insert_text = "[naming]\nvariable = \"${1:snake_case}\"\nfunction = \"${2:snake_case}\"\ntype = \"${3:pascal_case}\"\nconstant = \"${4:upper_snake_case}\"\n" },
+  { label = "line_width", insert_text = "[line_width]\nmax = ${1:120}\ncomment = ${2:100}\nstring = ${3:80}\n" },
+]
