@@ -1,78 +1,77 @@
-//! 扩展配置管理，封装语言服务器、环境变量等配置逻辑
-//! 职责：集中管理配置相关逻辑，避免配置散落在业务代码中
-
-use super::utils;
-use serde::Deserialize;
+//! 扩展配置管理（完全基于 API 配置系统）
+use serde::{Deserialize, Serialize};
 use zed_extension_api as zed;
 
-/// 仓颉语言服务器配置（与 extension.toml 对齐）
-#[derive(Debug, Deserialize, Default)]
+/// 仓颉LSP配置（与 API 配置系统强绑定）
+/// 字段类型、默认值均遵循 API 推荐规范
+#[derive(Debug, Deserialize, Serialize, Default, PartialEq)]
 pub struct CangjieLspConfig {
-    /// 禁用自动导入
+    /// 禁用自动导入（布尔类型，API 配置系统原生支持）
+    #[serde(default = "default_disable_auto_import")]
     pub disable_auto_import: bool,
-    /// 启用日志
+
+    /// 启用日志（与 API 日志系统对齐）
+    #[serde(default = "default_enable_log")]
     pub enable_log: bool,
-    /// 日志级别
-    pub log_level: Option<String>,
+
+    /// 日志级别（直接使用 API 定义的 LogLevel 枚举）
+    #[serde(default = "default_log_level")]
+    pub log_level: zed::LogLevel,
+
+    /// LSP 工作目录（使用 API 提供的 Path 类型）
+    #[serde(default)]
+    pub workspace_dir: Option<zed::Path>,
+}
+
+// 配置默认值（严格遵循 API 类型约束）
+fn default_disable_auto_import() -> bool {
+    true
+}
+fn default_enable_log() -> bool {
+    true
+}
+fn default_log_level() -> zed::LogLevel {
+    zed::LogLevel::Info
 }
 
 impl CangjieLspConfig {
-    /// 从Zed工作区配置加载
+    /// 从 Zed 工作区加载配置（API 推荐的配置加载流程）
     pub fn from_worktree(worktree: &zed::Worktree) -> zed::Result<Self> {
-        zed::settings::LspSettings::for_worktree(
-            super::language_server::CangjieLanguageServer::LANGUAGE_SERVER_ID,
+        // 必须使用 API 提供的 LspSettings::for_worktree 加载配置
+        let lsp_settings = zed::settings::LspSettings::for_worktree(
+            language_server::CangjieLanguageServer::LANGUAGE_SERVER_ID,
             worktree,
-        )
-        .map(|settings| {
-            settings
-                .settings
-                .unwrap_or_else(|| serde_json::Value::Object(Default::default()))
-        })
-        .map(|value| serde_json::from_value(value).unwrap_or_default())
+        )?;
+
+        // 配置反序列化必须使用 API 内置的 serde 工具链
+        match lsp_settings.settings {
+            Some(config_val) => serde_json::from_value(config_val)
+                .map_err(|err| zed::Error::InvalidConfig(format!("配置解析失败: {}", err))),
+            None => Ok(Self::default()),
+        }
     }
 
-    /// 生成语言服务器启动参数
-    pub fn to_args(&self) -> Vec<String> {
-        let mut args = vec!["src".to_string()];
+    /// 生成 LSP 启动参数（API 命令参数格式要求）
+    pub fn to_args(&self, worktree: &zed::Worktree) -> zed::Result<Vec<String>> {
+        let mut args = Vec::new();
 
-        if self.disable_auto_import {
-            args.push("--disableAutoImport".to_string());
-        }
-
-        args.push(format!("--enable-log={}", self.enable_log));
-
-        if let Some(level) = &self.log_level {
-            args.push(format!("--log-level={}", level));
-        }
-
-        args
-    }
-}
-
-/// 环境变量配置
-pub fn build_env_map(lib_path: &str) -> zed::Result<Vec<(String, String)>> {
-    let os_type = utils::OsType::current();
-    let mut env_map = Vec::new();
-
-    // 必须添加 CANGJIE_HOME
-    let cangjie_home = utils::get_env_var("CANGJIE_HOME")?;
-    env_map.push(("CANGJIE_HOME".to_string(), cangjie_home));
-
-    // 根据操作系统设置库路径
-    if let Some(env_var) = os_type.lib_env_var() {
-        let existing = env::var(env_var).ok();
-        let separator = if os_type == utils::OsType::Windows {
-            ";"
-        } else {
-            ":"
+        // 工作目录参数（优先使用配置，其次使用工作区根目录）
+        let workspace_dir = match &self.workspace_dir {
+            Some(dir) => dir,
+            None => worktree.path(),
         };
-        let new_value = utils::merge_env_var(existing, lib_path, separator);
-        env_map.push((env_var.to_string(), new_value));
-    } else {
-        return Err(zed::Error::Unsupported(format!(
-            "不支持的操作系统，无法设置动态库路径"
-        )));
-    }
+        args.push("--workspace".to_string());
+        args.push(workspace_dir.to_str()?.to_string());
 
-    Ok(env_map)
+        // 自动导入开关
+        if self.disable_auto_import {
+            args.push("--disable-auto-import".to_string());
+        }
+
+        // 日志配置（与 API 日志级别字符串格式对齐）
+        args.push(format!("--log-enabled={}", self.enable_log));
+        args.push(format!("--log-level={}", self.log_level.as_str()));
+
+        Ok(args)
+    }
 }

@@ -1,20 +1,10 @@
 name = "Cangjie"
-grammar = "cangjie"
-path_suffixes = ["cj", "cj.d"]
+id = "cangjie" # 必须与 language_ids 中的值一致
+grammar = "cangjie" # 与 grammars 中的名称一致
+path_suffixes = ["cj", "cj.d"] # 与语法库 file_types 对齐
 line_comments = ["//"]
-block_comments = [["/*", "*/"]]  # 补充块注释（文档支持的配置）
+block_comments = [["/*", "*/"]]
 tab_size = 4
 hard_tabs = false
-auto_format = true  # 启用自动格式化（文档推荐）
-formatter = "cangjie-language-server"  # 绑定LSP作为格式化器
-
-first_line_pattern = "^#!.*\\\\bcangjie\\\\b"  # 启用文件识别模式
-debuggers = ["Cangjie"]  # 关联调试器
-
-[grammar.tags]
-keyword = "keyword"
-type = "type"
-function = "function"
-string = "string"
-number = "number"
-comment = "comment"
+first_line_pattern = "^#!.*\\bcangjie\\b" # 脚本文件识别
+debuggers = ["Cangjie"] # 关联调试适配器

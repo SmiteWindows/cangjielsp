@@ -3,60 +3,26 @@
   "title": "Cangjie Extension Configuration",
   "type": "object",
   "properties": {
-    "cangjie.sdk_path": {
-      "type": ["string", "null"],
-      "description": "仓颉 SDK 路径（覆盖 CANGJIE_HOME 环境变量）"
+    "cangjie.disable_auto_import": {
+      "type": "boolean",
+      "description": "禁用自动导入功能",
+      "default": true
     },
-    "cangjie.lsp.log_level": {
+    "cangjie.enable_log": {
+      "type": "boolean",
+      "description": "启用 LSP 日志（与 Zed 日志系统集成）",
+      "default": true
+    },
+    "cangjie.log_level": {
       "type": "string",
-      "description": "LSP 日志级别",
+      "description": "日志级别（与 Zed 日志级别一致）",
       "default": "info",
       "enum": ["trace", "debug", "info", "warn", "error"]
     },
-    "cangjie.lsp.auto_import": {
-      "type": "boolean",
-      "description": "启用自动导入功能",
-      "default": true
-    },
-    "cangjie.formatting.indent_size": {
-      "type": "integer",
-      "description": "缩进长度（空格数）",
-      "default": 4,
-      "enum": [2, 4, 8]
-    },
-    "cangjie.formatting.line_width": {
-      "type": "integer",
-      "description": "代码行宽限制",
-      "default": 120,
-      "minimum": 80,
-      "maximum": 160
-    },
-    "cangjie.formatting.use_tabs": {
-      "type": "boolean",
-      "description": "使用制表符缩进",
-      "default": false
-    },
-    "cangjie.formatting.newline_style": {
-      "type": "string",
-      "description": "换行符风格",
-      "default": "lf",
-      "enum": ["lf", "crlf", "cr"]
-    },
-    "cangjie.debug.track_goroutines": {
-      "type": "boolean",
-      "description": "调试时追踪协程状态",
-      "default": true
-    },
-    "cangjie.debug.show_async_stack": {
-      "type": "boolean",
-      "description": "调试时显示异步调用栈",
-      "default": true
-    },
-    "cangjie.debug.debug_info_level": {
-      "type": "string",
-      "description": "调试信息详细程度",
-      "default": "full",
-      "enum": ["full", "limited", "none"]
+    "cangjie.workspace_dir": {
+      "type": ["string", "null"],
+      "description": "LSP 工作目录（可选，默认使用项目根目录）"
     }
-  }
+  },
+  "additionalProperties": false
 }
