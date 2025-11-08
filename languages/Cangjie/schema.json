@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cangjie Language Configuration",
+  "type": "object",
+  "properties": {
+    "cangjie.sdk_path": {
+      "type": "string",
+      "description": "仓颉 SDK 绝对路径，优先级高于 CANGJIE_HOME 环境变量"
+    },
+    "cangjie.build.target": {
+      "type": "string",
+      "enum": [
+        "native",
+        "ohos-aarch64",
+        "ohos-x86_64",
+        "windows-x86_64",
+        "linux-x86_64"
+      ],
+      "default": "native",
+      "description": "默认构建目标架构"
+    },
+    "cangjie.build.type": {
+      "type": "string",
+      "enum": ["debug", "release"],
+      "default": "debug",
+      "description": "默认构建类型"
+    },
+    "cangjie.lsp.log_level": {
+      "type": "string",
+      "enum": ["error", "warn", "info", "debug", "trace"],
+      "default": "info",
+      "description": "语言服务器日志级别"
+    }
+  }
+}

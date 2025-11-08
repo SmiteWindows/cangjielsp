@@ -1,23 +1,84 @@
+# 文档要求：核心元信息（必填）
 id = "cangjie"
-name = "Cangjie"
-description = "Cangjie support."
-version = "0.1.0"
+name = "Cangjie Language Support"
+description = "全面的仓颉语言支持：语法高亮、代码补全、调试、构建集成（基于 CJNative 后端）"
+version = "0.2.0"
 schema_version = 1
-authors = [
-    "Smite Rust <https://github.com/SmiteWindows>",
-]
+authors = ["Smite Rust <https://github.com/SmiteWindows>"]
 repository = "https://github.com/SmiteWindows/cangjielsp"
+license = "Apache-2.0"
+categories = ["languages", "debuggers", "build-tools"]
+keywords = ["cangjie", "仓颉", "lsp", "debug", "cjpm"]
 
+# 文档要求：激活条件（精准触发）
+[activation]
+file_types = ["cj", "cj.d"]
+configuration = ["cangjie"]
+
+# 文档要求：语言服务器配置（与代码中 CANGJIE_LS_ID 一致）
 [language_servers.cangjie-language-server]
-name = "cangjie-language-server"
+name = "Cangjie Language Server"
 language = "Cangjie"
+config_schema = "languages/Cangjie/schema.json"
 
 [language_servers.cangjie-language-server.language_ids]
 "Cangjie" = "cangjie"
 
+# 文档要求：语法解析器配置（Tree-sitter 规范）
 [grammars.cangjie]
 repository = "https://gitcode.com/Cangjie-SIG/tree-sitter-cangjie"
 rev = "main"
+path = "grammars/tree-sitter-cangjie"
+file_types = ["cj", "cj.d"]
 
-# [debug_adapters.Cangjie]
-# schema_path = "debug_adapter_schemas/Cangjie.json"
+# 文档要求：调试适配器配置（与代码中 CANGJIE_DAP_ID 一致）
+[debug_adapters.cangjie-dap]
+name = "Cangjie Debugger"
+language = "Cangjie"
+schema_path = "debug_adapter_schemas/Cangjie.json"
+supports_launch = true
+supports_attach = false
+
+# 文档要求：Slash 命令配置（与代码中命令名一致）
+[slash_commands]
+"cangjie: build" = { description = "使用 cjpm 构建仓颉项目（参数：[目标架构] [构建类型]）" }
+"cangjie: run" = { description = "运行仓颉编译产物（参数：[程序路径]）" }
+"cangjie: test" = { description = "运行仓颉测试用例（参数：[测试过滤规则]）" }
+"cangjie: clean" = { description = "清理仓颉项目构建产物" }
+"cangjie: check-env" = { description = "检查仓颉环境配置（CANGJIE_HOME、工具链完整性）" }
+
+# 文档要求：配置项定义（用户可配置）
+[configuration.cangjie]
+type = "table"
+description = "仓颉语言扩展配置"
+
+[configuration.cangjie.sdk_path]
+type = "string"
+description = "仓颉 SDK 路径（覆盖 CANGJIE_HOME 环境变量）"
+default = ""
+
+[configuration.cangjie.build]
+type = "table"
+description = "构建配置"
+
+[configuration.cangjie.build.target]
+type = "string"
+description = "默认构建目标架构"
+default = "native"
+enum = ["native", "ohos-aarch64", "ohos-x86_64", "windows-x86_64", "linux-x86_64"]
+
+[configuration.cangjie.build.type]
+type = "string"
+description = "默认构建类型"
+default = "debug"
+enum = ["debug", "release"]
+
+[configuration.cangjie.lsp]
+type = "table"
+description = "语言服务器配置"
+
+[configuration.cangjie.lsp.log_level]
+type = "string"
+description = "LSP 日志级别"
+default = "info"
+enum = ["error", "warn", "info", "debug", "trace"]
