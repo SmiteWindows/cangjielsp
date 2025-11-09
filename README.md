@@ -13,10 +13,21 @@ A [Cangjie](https://gitcode.com/Cangjie) extension for [Zed](https://zed.dev).
 
 To develop this extension, see the [Developing Extensions](https://zed.dev/docs/extensions/developing-extensions) section of the Zed docs.
 
-## zed_extension_api = "0.7.0"
-## zed 版本 0.211.4 以上
-## https://github.com/zed-industries/zed/tree/main/crates/extension_api
+# note
+Zed version	zed_extension_api version
 
+0.205.x	           0.0.1 - 0.7.0
+
+## zed_extension_api = "0.7.0"
+## zed 版本        0.211.4 以上
+## https://github.com/zed-industries/zed/tree/main/crates/extension_api
+# To run your extension in Zed as you're developing it:
+
+Make sure you have Rust installed
+Have the wasm32-wasip2 target installed (rustup target add wasm32-wasip2)
+Open the extensions view using the zed: extensions action in the command palette.
+Click the Install Dev Extension button in the top right
+Choose the path to your extension directory.
 ---
 
 ## 最终项目完整性说明
