@@ -1,7 +1,7 @@
 //! RAG 辅助工具（检索增强生成，用于性能问题诊断与优化建议）
-use super::corpus::{OptimizationSolution, PerformanceCorpus, PerformanceIssueType, global_corpus};
+use super::corpus::{global_corpus, OptimizationSolution, PerformanceCorpus, PerformanceIssueType};
 use std::collections::HashSet;
-use zed_extension_api as zed;
+use zed_extension_api;
 
 /// RAG 检索器
 #[derive(Debug, Default)]

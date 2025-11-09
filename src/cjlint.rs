@@ -1,226 +1,57 @@
-//! cjlint 代码检查工具集成（语法错误、风格规范、性能建议、安全校验）
+//! 代码检查工具 cjlint 集成
+use crate::config::CangjieConfig;
+use crate::tree_sitter_utils;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
-use std::path::Path;
-use zed_extension_api as zed;
+use zed_extension_api;
 
-/// cjlint 配置（对应 cjlint.toml）
-#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+/// cjlint 配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CjlintConfig {
-    /// 检查规则配置
-    #[serde(default)]
-    pub rules: HashMap<String, RuleConfig>,
-    /// 排除文件/目录
-    #[serde(default)]
-    pub exclude: Vec<String>,
-    /// 包含文件/目录
-    #[serde(default)]
-    pub include: Vec<String>,
-    /// 全局检查级别
-    #[serde(default = "default_check_level")]
-    pub check_level: CheckLevel,
-    /// 自动修复配置
-    #[serde(default)]
-    pub fix: FixConfig,
-    /// 输出格式
-    #[serde(default)]
-    pub output_format: OutputFormat,
+    /// 检查级别（error/warn/info/off）
+    pub check_level: String,
+    /// 启用风格检查
+    pub enable_style_check: bool,
+    /// 启用语法检查
+    pub enable_syntax_check: bool,
+    /// 忽略的规则列表
+    pub ignore_rules: Vec<String>,
+    /// 自定义规则路径
+    pub custom_rules_path: Option<String>,
 }
 
-/// 单个规则配置
-#[derive(Debug, Deserialize, Serialize, Clone, Default)]
-pub struct RuleConfig {
-    /// 是否启用
-    #[serde(default = "default_rule_enabled")]
-    pub enabled: bool,
-    /// 规则级别（覆盖全局）
-    #[serde(default)]
-    pub level: Option<CheckLevel>,
-    /// 规则额外配置
-    #[serde(default)]
-    pub options: HashMap<String, serde_json::Value>,
-}
-
-/// 检查级别
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, Copy)]
-#[serde(rename_all = "snake_case")]
-pub enum CheckLevel {
-    Error, // 错误（阻断构建）
-    Warn,  // 警告
-    Info,  // 信息
-    Off,   // 关闭
-}
-
-impl Default for CheckLevel {
+impl Default for CjlintConfig {
     fn default() -> Self {
-        Self::Warn
-    }
-}
-
-/// 自动修复配置
-#[derive(Debug, Deserialize, Serialize, Clone, Default)]
-pub struct FixConfig {
-    /// 是否启用自动修复
-    #[serde(default = "default_fix_enabled")]
-    pub enabled: bool,
-    /// 启用修复的规则列表
-    #[serde(default)]
-    pub rules: Vec<String>,
-    /// 是否备份原始文件
-    #[serde(default = "default_fix_backup")]
-    pub backup: bool,
-}
-
-/// 输出格式
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, Default)]
-#[serde(rename_all = "snake_case")]
-pub enum OutputFormat {
-    #[default]
-    Human,
-    Json,
-    Xml,
-    Sarif,
-}
-
-// 默认值
-fn default_check_level() -> CheckLevel {
-    CheckLevel::Warn
-}
-fn default_rule_enabled() -> bool {
-    true
-}
-fn default_fix_enabled() -> bool {
-    false
-}
-fn default_fix_backup() -> bool {
-    true
-}
-
-/// 官方规则库
-pub mod official_rules {
-    use super::CheckLevel;
-
-    /// 语法错误规则（Error 级别）
-    pub const SYNTAX: &[(&str, &str)] = &[
-        ("E001", "无效的语法格式，无法解析"),
-        ("E002", "未闭合的括号/引号/注释"),
-        ("E003", "引用未定义的标识符"),
-        ("E004", "类型不匹配"),
-        ("E005", "函数调用参数数量/类型不匹配"),
-        ("E006", "导入不存在的模块或依赖"),
-        ("E007", "重复定义标识符"),
-    ];
-
-    /// 代码风格规则（Warn 级别）
-    pub const STYLE: &[(&str, &str)] = &[
-        ("W001", "行宽超过限制（默认 120 字符）"),
-        ("W002", "缩进不一致（建议 4 空格）"),
-        ("W003", "多余的空格/空行"),
-        (
-            "W004",
-            "命名不规范（变量/函数 snake_case，类型 PascalCase）",
-        ),
-        ("W005", "公共接口缺少文档注释"),
-        ("W006", "冗余的分号"),
-        ("W007", "未使用的变量/导入"),
-        ("W008", "括号使用不规范"),
-    ];
-
-    /// 性能建议规则（Info 级别）
-    pub const PERFORMANCE: &[(&str, &str)] = &[
-        ("I001", "不必要的克隆操作（可改为引用）"),
-        ("I002", "低效的循环写法（建议使用迭代器）"),
-        ("I003", "未使用的函数返回值"),
-        ("I004", "过度嵌套的代码块（建议拆分函数）"),
-        ("I005", "使用更高效的标准库函数"),
-    ];
-
-    /// 安全规则（Error 级别）
-    pub const SECURITY: &[(&str, &str)] = &[
-        ("S001", "不安全的内存访问"),
-        ("S002", "硬编码敏感信息"),
-        ("S003", "未验证的用户输入"),
-        ("S004", "不安全的并发操作"),
-    ];
-
-    /// 获取规则描述
-    pub fn get_description(rule_id: &str) -> Option<&'static str> {
-        SYNTAX
-            .iter()
-            .find(|(id, _)| *id == rule_id)
-            .map(|(_, desc)| *desc)
-            .or_else(|| {
-                STYLE
-                    .iter()
-                    .find(|(id, _)| *id == rule_id)
-                    .map(|(_, desc)| *desc)
-            })
-            .or_else(|| {
-                PERFORMANCE
-                    .iter()
-                    .find(|(id, _)| *id == rule_id)
-                    .map(|(_, desc)| *desc)
-            })
-            .or_else(|| {
-                SECURITY
-                    .iter()
-                    .find(|(id, _)| *id == rule_id)
-                    .map(|(_, desc)| *desc)
-            })
-    }
-
-    /// 获取规则默认级别
-    pub fn get_default_level(rule_id: &str) -> CheckLevel {
-        if SYNTAX.iter().any(|(id, _)| *id == rule_id)
-            || SECURITY.iter().any(|(id, _)| *id == rule_id)
-        {
-            CheckLevel::Error
-        } else if STYLE.iter().any(|(id, _)| *id == rule_id) {
-            CheckLevel::Warn
-        } else if PERFORMANCE.iter().any(|(id, _)| *id == rule_id) {
-            CheckLevel::Info
-        } else {
-            CheckLevel::Warn
+        Self {
+            check_level: "warn".to_string(),
+            enable_style_check: true,
+            enable_syntax_check: true,
+            ignore_rules: Vec::new(),
+            custom_rules_path: None,
         }
     }
-
-    /// 检查规则是否支持自动修复
-    pub fn supports_fix(rule_id: &str) -> bool {
-        [
-            "W001", "W002", "W003", "W004", "W006", "W007", "I001", "I005",
-        ]
-        .contains(&rule_id)
-    }
 }
 
-/// 诊断结果
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct CjlintDiagnostic {
+/// 代码检查问题严重级别
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum LintSeverity {
+    Error,
+    Warn,
+    Info,
+}
+
+/// 代码检查结果
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LintIssue {
+    /// 规则ID
     pub rule_id: String,
+    /// 问题描述
     pub message: String,
-    pub level: CheckLevel,
-    pub line: u32,
-    pub column: u32,
-    pub end_line: Option<u32>,
-    pub end_column: Option<u32>,
-    pub fixable: bool,
-    pub fix: Option<CjlintFix>,
-}
-
-/// 自动修复方案
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct CjlintFix {
-    pub range: CjlintRange,
-    pub new_text: String,
-}
-
-/// 修复范围
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct CjlintRange {
-    pub start_line: u32,
-    pub start_column: u32,
-    pub end_line: u32,
-    pub end_column: u32,
+    /// 严重级别
+    pub severity: LintSeverity,
+    /// 代码范围
+    pub range: zed_extension_api::Range,
+    /// 修复建议
+    pub fix: Option<String>,
 }
 
 /// cjlint 管理器
@@ -229,256 +60,145 @@ pub struct CjlintManager;
 
 impl CjlintManager {
     /// 检查 cjlint 是否可用
-    pub fn is_available() -> zed::Result<()> {
-        Self::find_executable()?;
+    pub fn is_available() -> zed_extension_api::Result<()> {
+        if std::process::Command::new("cjlint")
+            .arg("--version")
+            .output()
+            .is_err()
+        {
+            return Err(zed_extension_api::Error::NotFound(
+                "cjlint 工具未找到，请安装并配置到 PATH 中".to_string(),
+            ));
+        }
         Ok(())
     }
 
-    /// 查找 cjlint 可执行文件
-    pub fn find_executable() -> zed::Result<zed::Path> {
-        // 1. 从 CANGJIE_HOME 查找
-        if let Ok(cangjie_home) = zed::env::var("CANGJIE_HOME") {
-            let mut path = zed::Path::new(&cangjie_home);
-            path.push("bin");
-            path.push(if zed::platform::is_windows() {
-                "cjlint.exe"
-            } else {
-                "cjlint"
-            });
-
-            if path.exists() && path.is_executable() {
-                return Ok(path);
-            }
-        }
-
-        // 2. 从 PATH 查找
-        if let Some(path) = zed::env::find_executable(if zed::platform::is_windows() {
-            "cjlint.exe"
-        } else {
-            "cjlint"
-        }) {
-            return Ok(path);
-        }
-
-        Err(zed::Error::NotFound(
-            "未找到 cjlint 工具，请配置 CANGJIE_HOME 或确保 cjlint 在 PATH 中".to_string(),
-        ))
-    }
-
-    /// 加载 cjlint 配置
+    /// 加载配置
     pub fn load_config(
-        worktree: &zed::Worktree,
-        extension_config: &super::config::CangjieConfig,
-    ) -> zed::Result<CjlintConfig> {
-        // 1. 项目根目录 cjlint.toml
-        let project_config = worktree.path().join("cjlint.toml");
-        if project_config.exists() {
-            return Self::parse_config(&project_config);
+        worktree: &zed_extension_api::Worktree,
+        config: &CangjieConfig,
+    ) -> zed_extension_api::Result<CjlintConfig> {
+        // 优先加载工作目录下的 cjlint.toml 配置
+        let config_path = worktree.path().join("cjlint.toml");
+        if config_path.exists() {
+            let config_content = std::fs::read_to_string(&config_path).map_err(|e| {
+                zed_extension_api::Error::IoError(format!("读取 cjlint 配置失败: {}", e))
+            })?;
+            let toml_config: CjlintConfig = toml::from_str(&config_content).map_err(|e| {
+                zed_extension_api::Error::InvalidData(format!("解析 cjlint 配置失败: {}", e))
+            })?;
+            return Ok(toml_config);
         }
 
-        // 2. 用户目录 .cjlint.toml
-        if let Some(user_config) = Self::user_config_path() {
-            if user_config.exists() {
-                return Self::parse_config(&user_config);
-            }
-        }
-
-        // 3. 扩展配置
-        Ok(extension_config.cjlint.clone())
-    }
-
-    /// 解析配置文件
-    fn parse_config(path: &zed::Path) -> zed::Result<CjlintConfig> {
-        let content = zed::fs::read_to_string(path)
-            .map_err(|e| zed::Error::IoError(format!("读取 {} 失败: {}", path.to_str()?, e)))?;
-
-        toml::from_str(&content)
-            .map_err(|e| zed::Error::InvalidConfig(format!("解析 {} 失败: {}", path.to_str()?, e)))
-    }
-
-    /// 用户目录配置路径
-    fn user_config_path() -> Option<zed::Path> {
-        zed::env::home_dir().map(|home| home.join(".cjlint.toml"))
+        // 未找到配置文件时使用默认配置
+        Ok(config.cjlint.clone())
     }
 
     /// 执行代码检查
     pub fn run_lint(
-        worktree: &zed::Worktree,
-        document: &zed::Document,
+        worktree: &zed_extension_api::Worktree,
+        document: &zed_extension_api::Document,
         config: &CjlintConfig,
-    ) -> zed::Result<Vec<zed::Diagnostic>> {
-        let file_path = document.path();
-        let file_str = file_path.to_str()?;
+    ) -> zed_extension_api::Result<Vec<zed_extension_api::Diagnostic>> {
+        Self::is_available()?;
 
-        // 跳过排除列表
-        if config
-            .exclude
-            .iter()
-            .any(|pattern| glob::Pattern::new(pattern).map_or(false, |p| p.matches(file_str)))
-        {
-            return Ok(vec![]);
+        // 1. 先通过 tree-sitter 进行语法错误检查（快速前置检查）
+        let content = document.text();
+        let tree = tree_sitter_utils::parse_document(content);
+        let mut diagnostics = tree_sitter_utils::check_syntax_errors(&tree, content);
+
+        // 如果禁用语法检查，过滤掉语法错误诊断
+        if !config.enable_syntax_check {
+            diagnostics.retain(|d| {
+                d.code
+                    .as_ref()
+                    .map(|c| c.value != "SYNTAX_ERROR")
+                    .unwrap_or(true)
+            });
         }
 
-        // 构建命令
-        let cjlint_path = Self::find_executable()?;
-        let mut args = Vec::new();
+        // 2. 执行 cjlint 进行风格和语义检查
+        if config.enable_style_check || (config.enable_syntax_check && diagnostics.is_empty()) {
+            let mut args = vec!["check".to_string()];
 
-        // 配置文件
-        let project_config = worktree.path().join("cjlint.toml");
-        if project_config.exists() {
-            args.push(format!("--config={}", project_config.to_str()?));
-        }
+            // 添加配置参数
+            args.push(format!("--level={}", config.check_level));
+            if !config.enable_style_check {
+                args.push("--no-style".to_string());
+            }
+            if !config.enable_syntax_check {
+                args.push("--no-syntax".to_string());
+            }
+            for rule in &config.ignore_rules {
+                args.push(format!("--ignore={}", rule));
+            }
+            if let Some(custom_rules) = &config.custom_rules_path {
+                args.push(format!("--rules={}", custom_rules));
+            }
+            // 输出 JSON 格式结果
+            args.push("--format=json".to_string());
+            // 添加文件路径
+            args.push(document.path().to_str().unwrap().to_string());
 
-        // 检查级别、输出格式
-        args.push(format!(
-            "--level={}",
-            Self::level_to_str(config.check_level)
-        ));
-        args.push("--format=json".to_string());
-        args.push("--stdin".to_string());
-        args.push(format!("--stdin-filename={}", file_str));
+            // 执行 cjlint 命令
+            let output = std::process::Command::new("cjlint")
+                .args(&args)
+                .current_dir(worktree.path())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()?
+                .wait_with_output()?;
 
-        // 执行命令
-        let mut child = zed::process::Command::new(cjlint_path.to_str()?)
-            .args(&args)
-            .stdin(zed::process::Stdio::piped())
-            .stdout(zed::process::Stdio::piped())
-            .stderr(zed::process::Stdio::piped())
-            .spawn()?;
+            if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                return Err(zed_extension_api::Error::ProcessFailed(format!(
+                    "cjlint 检查失败: {}",
+                    stderr
+                )));
+            }
 
-        // 写入文件内容
-        child
-            .stdin
-            .as_mut()
-            .unwrap()
-            .write_all(document.text().as_bytes())?;
+            // 解析 JSON 结果
+            let lint_issues: Vec<LintIssue> =
+                serde_json::from_slice(&output.stdout).map_err(|e| {
+                    zed_extension_api::Error::InvalidData(format!("解析 cjlint 结果失败: {}", e))
+                })?;
 
-        let output = child.wait_with_output()?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(zed::Error::ProcessFailed(format!(
-                "cjlint 检查失败: {}",
-                stderr.trim()
-            )));
-        }
-
-        // 解析诊断结果
-        let diagnostics: Vec<CjlintDiagnostic> = serde_json::from_slice(&output.stdout)
-            .map_err(|e| zed::Error::InvalidConfig(format!("解析诊断结果失败: {}", e)))?;
-
-        // 转换为 Zed 诊断格式
-        Ok(diagnostics
-            .into_iter()
-            .filter(|diag| {
-                // 过滤禁用的规则
-                let rule_config = config
-                    .rules
-                    .get(&diag.rule_id)
-                    .unwrap_or(&RuleConfig::default());
-                rule_config.enabled
-                    && rule_config.level.unwrap_or(config.check_level) != CheckLevel::Off
-            })
-            .map(|diag| {
-                let severity = match diag.level {
-                    CheckLevel::Error => zed::DiagnosticSeverity::Error,
-                    CheckLevel::Warn => zed::DiagnosticSeverity::Warn,
-                    CheckLevel::Info => zed::DiagnosticSeverity::Info,
-                    CheckLevel::Off => unreachable!(),
+            // 转换为 Zed 诊断格式
+            for issue in lint_issues {
+                let severity = match issue.severity {
+                    LintSeverity::Error => zed_extension_api::DiagnosticSeverity::Error,
+                    LintSeverity::Warn => zed_extension_api::DiagnosticSeverity::Warn,
+                    LintSeverity::Info => zed_extension_api::DiagnosticSeverity::Info,
                 };
 
-                let mut fixes = None;
-                if diag.fixable && config.fix.enabled {
-                    let rule_config = config
-                        .rules
-                        .get(&diag.rule_id)
-                        .unwrap_or(&RuleConfig::default());
-                    let fix_enabled =
-                        config.fix.rules.is_empty() || config.fix.rules.contains(&diag.rule_id);
-                    if fix_enabled && official_rules::supports_fix(&diag.rule_id) {
-                        if let Some(fix) = diag.fix {
-                            fixes = Some(vec![zed::Fix {
-                                title: format!("修复规则 {}", diag.rule_id),
-                                edits: vec![zed::Edit {
-                                    path: file_path.clone(),
-                                    edits: vec![zed::TextEdit {
-                                        range: zed::Range {
-                                            start: zed::Position {
-                                                line: fix.range.start_line - 1,
-                                                column: fix.range.start_column - 1,
-                                            },
-                                            end: zed::Position {
-                                                line: fix.range.end_line - 1,
-                                                column: fix.range.end_column - 1,
-                                            },
-                                        },
-                                        new_text: fix.new_text,
-                                    }],
-                                }],
-                            }]);
-                        }
-                    }
-                }
-
-                zed::Diagnostic {
-                    range: zed::Range {
-                        start: zed::Position {
-                            line: diag.line - 1,
-                            column: diag.column - 1,
-                        },
-                        end: zed::Position {
-                            line: diag.end_line.unwrap_or(diag.line) - 1,
-                            column: diag.end_column.unwrap_or(diag.column) - 1,
-                        },
-                    },
+                let mut diagnostic = zed_extension_api::Diagnostic {
+                    range: issue.range,
                     severity,
-                    code: Some(zed::DiagnosticCode {
-                        value: diag.rule_id.clone(),
-                        description: official_rules::get_description(&diag.rule_id)
-                            .map(|s| s.to_string()),
+                    code: Some(zed_extension_api::DiagnosticCode {
+                        value: issue.rule_id,
+                        description: Some(issue.message.clone()),
                     }),
-                    message: diag.message,
+                    message: issue.message,
                     source: Some("cjlint".to_string()),
-                    fixes,
+                    fixes: None,
+                };
+
+                // 添加修复建议（如果有）
+                if let Some(fix) = issue.fix {
+                    let text_edit = zed_extension_api::TextEdit {
+                        range: diagnostic.range.clone(),
+                        new_text: fix,
+                    };
+                    diagnostic.fixes = Some(vec![zed_extension_api::Fix {
+                        title: "应用 cjlint 修复建议".to_string(),
+                        edits: vec![(document.uri().clone(), vec![text_edit])],
+                    }]);
                 }
-            })
-            .collect())
-    }
 
-    /// 执行自动修复
-    pub fn run_fix(
-        worktree: &zed::Worktree,
-        document: &mut zed::Document,
-        config: &CjlintConfig,
-    ) -> zed::Result<()> {
-        if !config.fix.enabled {
-            return Err(zed::Error::InvalidConfig("自动修复未启用".to_string()));
-        }
-
-        let diagnostics = self.run_lint(worktree, document, config)?;
-        let mut edits = Vec::new();
-
-        for diag in diagnostics {
-            if let Some(fixes) = diag.fixes {
-                for fix in fixes {
-                    for edit in fix.edits {
-                        edits.extend(edit.edits);
-                    }
-                }
+                diagnostics.push(diagnostic);
             }
         }
 
-        // 应用编辑
-        document.apply_edits(edits)?;
-        Ok(())
-    }
-
-    /// 检查级别转字符串
-    fn level_to_str(level: CheckLevel) -> &'static str {
-        match level {
-            CheckLevel::Error => "error",
-            CheckLevel::Warn => "warn",
-            CheckLevel::Info => "info",
-            CheckLevel::Off => "off",
-        }
+        Ok(diagnostics)
     }
 }

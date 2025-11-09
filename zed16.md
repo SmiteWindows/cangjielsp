@@ -1740,12 +1740,12 @@ impl CjfmtManager {
 }
 ```
 
-## 9. 其他工具模块说明
+<!--## 9. 其他工具模块说明
 其他工具模块（`cjlint`/`cjpm`/`cjdb`/`cjcov`/`cjprof`）需按照相同模式修复：
 1. 将所有 `zed::` 替换为 `zed_extension_api::`
 2. 确保依赖引用正确（如 `use crate::config::CangjieConfig`）
 3. 实现 `Default` 特性用于默认配置
-4.
+4.-->
 ## 9. 其他工具模块完整实现（续）
 ### 9.1 代码检查工具（src/cjlint.rs）
 ```rust
