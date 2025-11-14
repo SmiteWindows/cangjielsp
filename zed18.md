@@ -12,15 +12,15 @@ edition = "2021"
 [dependencies]
 zed_extension_api = "0.7.0"
 log = "0.4"
-env_logger = "0.10"
+env_logger = "0.11"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-tree-sitter = "0.20"
-tree-sitter-cangjie = { git = "https://github.com/cangjie-lang/tree-sitter-cangjie", rev = "main" }
+tree-sitter = "0.25"
+tree-sitter-cangjie = { git = "https://gitcode.com/Cangjie-SIG/tree-sitter-cangjie", rev = "main" }
 glob = "0.3"
-tokio = { version = "1.0", features = ["full"] }
-arc-swap = "1.0"
-toml = "0.8"
+tokio = { version = "1.48", features = ["full"] }
+arc-swap = "1.7"
+toml = "0.9"  # 显式添加 toml 依赖（修复配置解析）
 ```
 
 ## 2. 全局常量与模块导出（src/lib.rs）

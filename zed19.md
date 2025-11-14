@@ -12,15 +12,15 @@ edition = "2021"
 [dependencies]
 zed_extension_api = "0.7.0"
 log = "0.4"
-env_logger = "0.10"
+env_logger = "0.11"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-tree-sitter = "0.20.10"  # 与 tree-sitter-cangjie 兼容版本
+tree-sitter = "0.25"
 tree-sitter-cangjie = { git = "https://gitcode.com/Cangjie-SIG/tree-sitter-cangjie", rev = "main" }
 glob = "0.3"
-tokio = { version = "1.0", features = ["full"] }
-arc-swap = "1.0"
-toml = "0.8"
+tokio = { version = "1.48", features = ["full"] }
+arc-swap = "1.7"
+toml = "0.9"  # 显式添加 toml 依赖（修复配置解析）
 ```
 
 ## 2. Tree-sitter 工具模块（src/tree_sitter_utils.rs）
@@ -207,20 +207,20 @@ pub fn extract_symbols(content: &str, tree: &Tree) -> Vec<SymbolInfo> {
 fn handle_function_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures: &HashMap<String, Node>) {
     let name_node = captures.get("function.name").unwrap();
     let name = get_node_text(content, name_node);
-    
+
     // 提取参数和返回类型（适配官方 parameter_list 和 type_annotation 节点）
     let params_detail = captures.get("function.params")
         .map(|params_node| format_params(content, params_node))
         .unwrap_or_else(|| "()".to_string());
-    
+
     let return_detail = captures.get("function.return_type")
         .map(|return_type_node| format!(" -> {}", get_node_text(content, return_type_node)))
         .unwrap_or_default();
-    
+
     let detail = format!("fn {}{}{}", name, params_detail, return_detail);
-    
+
     let range = node_to_zed_range(name_node);
-    
+
     symbols.push(SymbolInfo {
         name,
         r#type: SymbolType::Function,
@@ -234,20 +234,20 @@ fn handle_function_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures
 fn handle_variable_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures: &HashMap<String, Node>) {
     let name_node = captures.get("variable.name").unwrap();
     let name = get_node_text(content, name_node);
-    
+
     // 提取变量关键字（let/var）和类型（适配官方 variable_keyword 节点）
     let keyword = captures.get("variable.keyword")
         .map(|keyword_node| get_node_text(content, keyword_node))
         .unwrap_or("let".to_string());
-    
+
     let type_detail = captures.get("variable.type")
         .map(|type_node| format!(": {}", get_node_text(content, type_node)))
         .unwrap_or_default();
-    
+
     let detail = format!("{} {}{}", keyword, name, type_detail);
-    
+
     let range = node_to_zed_range(name_node);
-    
+
     symbols.push(SymbolInfo {
         name,
         r#type: SymbolType::Variable,
@@ -261,16 +261,16 @@ fn handle_variable_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures
 fn handle_struct_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures: &HashMap<String, Node>) {
     let name_node = captures.get("struct.name").unwrap();
     let name = get_node_text(content, name_node);
-    
+
     // 提取结构体字段数（适配官方 field_declaration_list 节点）
     let fields_detail = captures.get("struct.fields")
         .map(|fields_node| format!(" ({})", fields_node.child_count()))
         .unwrap_or_default();
-    
+
     let detail = format!("struct {}{}", name, fields_detail);
-    
+
     let range = node_to_zed_range(name_node);
-    
+
     symbols.push(SymbolInfo {
         name,
         r#type: SymbolType::Struct,
@@ -284,16 +284,16 @@ fn handle_struct_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures: 
 fn handle_enum_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures: &HashMap<String, Node>) {
     let name_node = captures.get("enum.name").unwrap();
     let name = get_node_text(content, name_node);
-    
+
     // 提取枚举变体量（适配官方 enum_variant_list 节点）
     let variants_detail = captures.get("enum.variants")
         .map(|variants_node| format!(" ({})", variants_node.child_count()))
         .unwrap_or_default();
-    
+
     let detail = format!("enum {}{}", name, variants_detail);
-    
+
     let range = node_to_zed_range(name_node);
-    
+
     symbols.push(SymbolInfo {
         name,
         r#type: SymbolType::Enum,
@@ -307,15 +307,15 @@ fn handle_enum_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures: &H
 fn handle_import_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures: &HashMap<String, Node>) {
     let path_node = captures.get("import.path").unwrap();
     let path = get_node_text(content, path_node).trim_matches('"').to_string();
-    
+
     // 提取导入别名（适配官方 alias 节点）
     let alias_detail = captures.get("import.alias")
         .map(|alias_node| format!(" as {}", get_node_text(content, alias_node)))
         .unwrap_or_default();
-    
+
     let detail = format!("import \"{}\"{}", path, alias_detail);
     let range = node_to_zed_range(captures.get("import").unwrap());
-    
+
     symbols.push(SymbolInfo {
         name: path,
         r#type: SymbolType::Import,
@@ -329,24 +329,24 @@ fn handle_import_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures: 
 fn handle_method_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures: &HashMap<String, Node>) {
     let name_node = captures.get("method.name").unwrap();
     let name = get_node_text(content, name_node);
-    
+
     // 提取方法接收者、参数和返回类型（适配官方 receiver/parameter_list/type_annotation 节点）
     let receiver_detail = captures.get("method.receiver")
         .map(|receiver_node| format!("{}: ", get_node_text(content, receiver_node)))
         .unwrap_or_default();
-    
+
     let params_detail = captures.get("method.params")
         .map(|params_node| format_params(content, params_node))
         .unwrap_or_else(|| "()".to_string());
-    
+
     let return_detail = captures.get("method.return_type")
         .map(|return_type_node| format!(" -> {}", get_node_text(content, return_type_node)))
         .unwrap_or_default();
-    
+
     let detail = format!("method {}{}{}", receiver_detail, name, params_detail, return_detail);
-    
+
     let range = node_to_zed_range(name_node);
-    
+
     symbols.push(SymbolInfo {
         name,
         r#type: SymbolType::Method,
@@ -360,16 +360,16 @@ fn handle_method_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures: 
 fn handle_constant_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures: &HashMap<String, Node>) {
     let name_node = captures.get("constant.name").unwrap();
     let name = get_node_text(content, name_node);
-    
+
     // 提取常量值（适配官方 expression 节点）
     let value_detail = captures.get("constant.value")
         .map(|value_node| format!(" = {}", get_node_text(content, value_node)))
         .unwrap_or_default();
-    
+
     let detail = format!("const {}{}", name, value_detail);
-    
+
     let range = node_to_zed_range(name_node);
-    
+
     symbols.push(SymbolInfo {
         name,
         r#type: SymbolType::Constant,
@@ -383,16 +383,16 @@ fn handle_constant_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures
 fn handle_interface_symbol(symbols: &mut Vec<SymbolInfo>, content: &str, captures: &HashMap<String, Node>) {
     let name_node = captures.get("interface.name").unwrap();
     let name = get_node_text(content, name_node);
-    
+
     // 提取接口方法数（适配官方 method_signature_list 节点）
     let methods_detail = captures.get("interface.methods")
         .map(|methods_node| format!(" ({})", methods_node.child_count()))
         .unwrap_or_default();
-    
+
     let detail = format!("interface {}{}", name, methods_detail);
-    
+
     let range = node_to_zed_range(name_node);
-    
+
     symbols.push(SymbolInfo {
         name,
         r#type: SymbolType::Interface,
@@ -449,7 +449,7 @@ pub fn node_to_zed_range(node: &Node) -> Range {
 pub fn check_syntax_errors(tree: &Tree, content: &str) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
     let mut cursor = tree_sitter::TreeCursor::new(&tree.root_node());
-    
+
     find_error_nodes(&mut cursor, content, &mut diagnostics);
     diagnostics
 }
@@ -461,13 +461,13 @@ fn find_error_nodes(
     diagnostics: &mut Vec<Diagnostic>
 ) {
     let node = cursor.node();
-    
+
     // 官方语法错误节点类型：ERROR（解析失败）、invalid_*（语义错误）
     if node.is_error() || node.kind().starts_with("invalid_") {
         let range = node_to_zed_range(&node);
         let error_text = get_node_text(content, &node).trim();
         let error_kind = if node.is_error() { "语法解析错误" } else { "无效语法结构" };
-        
+
         // 构建 LSP 标准 Diagnostic
         let mut diagnostic = Diagnostic {
             range,
@@ -520,7 +520,7 @@ fn find_error_nodes(
 
         diagnostics.push(diagnostic);
     }
-    
+
     // 递归遍历子节点
     if cursor.goto_first_child() {
         loop {
@@ -543,7 +543,7 @@ pub fn find_symbol_at_position(
         row: position.line as usize,
         column: position.character as usize,
     };
-    
+
     let mut cursor = tree_sitter::TreeCursor::new(&tree.root_node());
     find_symbol_node(&mut cursor, content, point)
 }
@@ -555,17 +555,17 @@ fn find_symbol_node(
     point: TsPoint
 ) -> Option<SymbolInfo> {
     let node = cursor.node();
-    
+
     if node.contains_point(point) {
         // 严格匹配官方符号节点类型
         match node.kind() {
-            "function_declaration" | "variable_declaration" | "struct_declaration" | 
-            "enum_declaration" | "import_statement" | "method_declaration" | 
+            "function_declaration" | "variable_declaration" | "struct_declaration" |
+            "enum_declaration" | "import_statement" | "method_declaration" |
             "constant_declaration" | "interface_declaration" => {
                 let query = Query::new(tree_sitter_cangjie::language(), SYMBOL_QUERY)
                     .expect("Invalid symbol query (符号查询语法错误)");
                 let mut query_cursor = QueryCursor::new();
-                
+
                 for match_result in query_cursor.matches(&query, node, content.as_bytes()) {
                     let mut captures = HashMap::new();
                     for capture in match_result.captures {
@@ -574,7 +574,7 @@ fn find_symbol_node(
                             capture.node,
                         );
                     }
-                    
+
                     return match node.kind() {
                         "function_declaration" => {
                             let name_node = captures.get("function.name").unwrap();
@@ -677,7 +677,7 @@ fn find_symbol_node(
             }
         }
     }
-    
+
     None
 }
 
@@ -688,12 +688,12 @@ pub fn find_identifier_at_point(
     point: TsPoint
 ) -> Option<String> {
     let node = cursor.node();
-    
+
     // 严格匹配官方 identifier 节点类型
     if node.kind() == "identifier" && node.contains_point(point) {
         return Some(get_node_text(content, &node));
     }
-    
+
     if cursor.goto_first_child() {
         loop {
             if let Some(ident) = find_identifier_at_point(cursor, content, point) {
@@ -705,7 +705,7 @@ pub fn find_identifier_at_point(
         }
         cursor.goto_parent();
     }
-    
+
     None
 }
 ```
@@ -739,7 +739,7 @@ impl CangjieLanguageServer {
     /// 创建新的 LSP 服务器
     pub fn new(config: Arc<CangjieConfig>) -> Self {
         tree_sitter_utils::init_parser();
-        
+
         Self {
             config,
             document_cache: HashMap::new(),
@@ -1078,7 +1078,7 @@ impl CangjieLanguageServer {
             column: position.character as usize,
         };
         let mut cursor = tree_sitter::TreeCursor::new(&tree.root_node());
-        
+
         Ok(find_identifier_at_point(&mut cursor, content, point).unwrap_or_default())
     }
 }
@@ -1101,7 +1101,7 @@ pub struct Snippet {
 /// 获取仓颉语言代码片段（基于官方语法定义）
 pub fn get_snippets() -> HashMap<String, Vec<Snippet>> {
     let mut snippets = HashMap::new();
-    
+
     let cangjie_snippets = vec![
         // 函数声明（适配官方 function_declaration 语法）
         Snippet {
@@ -1175,7 +1175,7 @@ pub fn get_snippets() -> HashMap<String, Vec<Snippet>> {
             body: "return Err(${1:error_message});".to_string(),
         },
     ];
-    
+
     snippets.insert("Cangjie".to_string(), cangjie_snippets);
     snippets
 }
@@ -1269,7 +1269,7 @@ impl Default for CangjieConfig {
 /// 从 Zed 配置加载 Cangjie LSP 配置
 pub fn load_zed_config() -> zed_extension_api::Result<CangjieConfig> {
     let zed_config = ZedConfig::get::<serde_json::Value>("cangjie")?;
-    
+
     match zed_config {
         Some(config_value) => {
             serde_json::from_value(config_value)
